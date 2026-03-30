@@ -1,4 +1,4 @@
-# Pagina Web Gabi
+# Pagina Web Libreria
 
 Ecommerce base para libreria infantil con frontend Vue 3 y backend PHP 8+.
 
