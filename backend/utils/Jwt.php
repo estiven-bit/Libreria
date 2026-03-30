@@ -1,0 +1,50 @@
+<?php
+namespace App\Utils;
+class Jwt
+{
+    public static function encode(array $payload, string $secret): string
+    {
+        $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+        $segments = [
+            self::base64UrlEncode(json_encode($header)),
+            self::base64UrlEncode(json_encode($payload)),
+        ];
+        $signingInput = implode('.', $segments);
+        $signature = hash_hmac('sha256', $signingInput, $secret, true);
+        $segments[] = self::base64UrlEncode($signature);
+        return implode('.', $segments);
+    }
+
+    public static function decode(string $token, string $secret): ?array
+    {
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        [$header64, $payload64, $signature64] = $parts;
+        $payload = json_decode(self::base64UrlDecode($payload64), true);
+        $signature = self::base64UrlDecode($signature64);
+
+        $valid = hash_equals(hash_hmac('sha256', $header64 . '.' . $payload64, $secret, true), $signature);
+        if (!$valid) {
+            return null;
+        }
+
+        if (isset($payload['exp']) && time() > $payload['exp']) {
+            return null;
+        }
+
+        return $payload;
+    }
+
+    private static function base64UrlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    private static function base64UrlDecode(string $data): string
+    {
+        return base64_decode(strtr($data, '-_', '+/'));
+    }
+}

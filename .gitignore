@@ -1,0 +1,12 @@
+# Ignorar dependencias (GitHub las descarga luego solo)
+node_modules/
+vendor/
+
+# Ignorar archivos de configuración personal
+.env
+.htaccess
+
+# Ignorar archivos de log y temporales
+*.log
+dist/
+.DS_Store

@@ -1,0 +1,70 @@
+/* VARIABLES GLOBALES - Mantener solo lo necesario */
+:root {
+  --primary: #ff6b6b;
+  --secondary: #4d96ff;
+  --accent: #ffd93d;
+  --background: #fff9e6;
+  --text: #2b2b2b;
+  --radius: 20px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* RESET TOTAL - Esto es lo único que debe ser global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden; /* Evita que el footer cause scroll lateral */
+}
+
+body {
+  font-family: 'Poppins', 'Nunito', sans-serif;
+  background: radial-gradient(circle at top, #fff1c2, var(--background));
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ESTRUCTURA LIMPIA */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.page {
+  flex: 1;
+  width: 100%;
+}
+
+/* BOTONES GLOBALES */
+.btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* INPUTS GLOBALES */
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid #f0f0f0;
+  margin-bottom: 12px;
+}
