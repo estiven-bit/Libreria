@@ -13,8 +13,8 @@ class StockService
 
     public function reduceStock(int $productId, int $quantity, string $reason): void
     {
-        $stmt = $this->db->prepare('UPDATE products SET stock = stock - :qty WHERE id = :id AND stock >= :qty');
-        $stmt->execute(['qty' => $quantity, 'id' => $productId]);
+        $stmt = $this->db->prepare('UPDATE products SET stock = stock - :qty WHERE id = :id AND stock >= :qty_limit');
+        $stmt->execute(['qty' => $quantity, 'id' => $productId, 'qty_limit' => $quantity]);
 
         $stmt = $this->db->prepare('INSERT INTO stock_history (product_id, quantity_change, reason, created_at) VALUES (:product_id, :quantity_change, :reason, NOW())');
         $stmt->execute([

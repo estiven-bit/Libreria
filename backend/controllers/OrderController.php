@@ -7,6 +7,8 @@ require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../services/StockService.php';
 require_once __DIR__ . '/../services/EmailService.php';
 require_once __DIR__ . '/../models/Coupon.php';
+require_once __DIR__ . '/../services/PdfService.php';
+require_once __DIR__ . '/../services/TelegramService.php';
 
 class OrderController
 {
@@ -67,12 +69,75 @@ class OrderController
         $email = new EmailService($this->config['mail']);
         $email->sendOrderConfirmation($data['user_email'] ?? '', $orderId);
 
+        // --- NOTIFICACIÓN A TELEGRAM CON PDF ---
+        try {
+            // 1. Obtener datos de dirección y usuario
+            $addrStmt = $this->db->prepare('SELECT * FROM addresses WHERE id = :id LIMIT 1');
+            $addrStmt->execute(['id' => (int)($data['address_id'] ?? 0)]);
+            $addressInfo = $addrStmt->fetch() ?: [
+                'country' => 'No provisto',
+                'city' => 'No provisto',
+                'postal_code' => 'No provisto',
+                'address_line' => 'No provisto'
+            ];
+
+            $usrStmt = $this->db->prepare('SELECT name, email, phone FROM users WHERE id = :id LIMIT 1');
+            $usrStmt->execute(['id' => $userId]);
+            $userInfo = $usrStmt->fetch() ?: [
+                'name' => 'Cliente',
+                'email' => $data['user_email'] ?? '',
+                'phone' => 'No provisto'
+            ];
+
+            // Obtener datos del pedido que acabamos de guardar (para el PDF)
+            $orderRow = [
+                'id' => $orderId,
+                'total_price' => $total,
+                'payment_method' => $data['payment_method'] ?? 'cash_on_delivery',
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            // 2. Generar el PDF
+            $pdfService = new PdfService();
+            $pdfPath = $pdfService->generateOrderPdf($orderRow, $userInfo, $addressInfo, $items);
+
+            // 3. Enviar mensaje de texto a Telegram
+            $tg = new TelegramService();
+            
+            $methodText = ($orderRow['payment_method'] === 'card_online') 
+                ? '💳 Tarjeta (Pago online)' 
+                : '💵 Pago al recibir (Contra reembolso)';
+            $statusText = ($orderRow['payment_method'] === 'card_online') 
+                ? '<i>Pendiente de confirmación de pasarela</i>' 
+                : '<b>Pendiente de pago al recibir</b>';
+
+            $message = "📦 <b>NUEVO PEDIDO RECIBIDO</b>\n\n" .
+                       "Pedido: <b>#{$orderId}</b>\n" .
+                       "Cliente: <b>{$userInfo['name']}</b>\n" .
+                       "Total: <b>\$" . number_format($total, 2) . "</b>\n" .
+                       "Método de pago: {$methodText}\n" .
+                       "Estado: {$statusText}\n";
+
+            $tg->sendMessage($message);
+
+            // 4. Enviar el PDF
+            $caption = "Etiqueta y Ticket del Pedido #{$orderId}";
+            $tg->sendDocument($pdfPath, $caption);
+
+            // 5. Eliminar PDF temporal
+            if (file_exists($pdfPath)) {
+                unlink($pdfPath);
+            }
+        } catch (\Throwable $e) {
+            error_log('Error enviando pedido a Telegram: ' . $e->getMessage());
+        }
+
         Response::json(['status' => 'success', 'order_id' => $orderId], 201);
     }
 
     public function cancel(int $userId, int $orderId): void
     {
-        $stmt = $this->db->prepare('UPDATE orders SET status = \"cancelled\" WHERE id = :id AND user_id = :user_id AND status IN (\"pending\", \"paid\")');
+        $stmt = $this->db->prepare("UPDATE orders SET status = 'cancelled' WHERE id = :id AND user_id = :user_id AND status IN ('pending', 'paid')");
         $stmt->execute(['id' => $orderId, 'user_id' => $userId]);
         Response::json(['message' => 'Order cancelled']);
     }

@@ -39,7 +39,8 @@ class TelegramService
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/x-www-form-urlencoded',
             ]);
@@ -83,5 +84,54 @@ class TelegramService
     {
         $title = htmlspecialchars($productTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $this->sendMessage("Stock bajo: {$title}");
+    }
+
+    public function sendDocument(string $filePath, string $caption = ''): void
+    {
+        if (!$this->isConfigured() || !file_exists($filePath)) {
+            return;
+        }
+
+        $ch = null;
+
+        try {
+            $url = 'https://api.telegram.org/bot' . rawurlencode($this->token) . '/sendDocument';
+            
+            $file = new \CURLFile($filePath);
+            $payload = [
+                'chat_id' => $this->chatId,
+                'document' => $file,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+            ];
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $result = curl_exec($ch);
+            if ($result === false || $result === '') {
+                $curlError = curl_error($ch);
+                error_log(sprintf('[%s] TelegramService sendDocument cURL error: %s', date('c'), $curlError));
+                throw new \RuntimeException('Telegram API (sendDocument): respuesta vacia o fallo de red');
+            }
+        } catch (\Throwable $e) {
+            $line = sprintf(
+                "[%s] TelegramService sendDocument error: %s\n",
+                date('c'),
+                $e->getMessage()
+            );
+            @error_log(trim($line));
+            $logFile = dirname(__DIR__) . '/storage/logs/telegram.log';
+            @file_put_contents($logFile, $line, FILE_APPEND);
+        } finally {
+            if ($ch !== null) {
+                curl_close($ch);
+            }
+        }
     }
 }

@@ -6,12 +6,12 @@ class Cart extends BaseModel
 {
     public function getActiveCart(int $userId): array
     {
-        $stmt = $this->db->prepare('SELECT * FROM carts WHERE user_id = :user_id AND status = \"active\" LIMIT 1');
+        $stmt = $this->db->prepare("SELECT * FROM carts WHERE user_id = :user_id AND status = 'active' LIMIT 1");
         $stmt->execute(['user_id' => $userId]);
         $cart = $stmt->fetch();
 
         if (!$cart) {
-            $stmt = $this->db->prepare('INSERT INTO carts (user_id, status, created_at) VALUES (:user_id, \"active\", NOW())');
+            $stmt = $this->db->prepare("INSERT INTO carts (user_id, status, created_at) VALUES (:user_id, 'active', NOW())");
             $stmt->execute(['user_id' => $userId]);
             $cart = ['id' => (int)$this->db->lastInsertId(), 'user_id' => $userId, 'status' => 'active'];
         }
