@@ -5,7 +5,6 @@ require_once __DIR__ . '/../utils/Validator.php';
 require_once __DIR__ . '/../utils/Sanitizer.php';
 require_once __DIR__ . '/../utils/Jwt.php';
 require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../middlewares/CsrfMiddleware.php';
 require_once __DIR__ . '/../public/vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -16,11 +15,13 @@ class AuthController
 {
     private PDO $db;
     private array $config;
+    private array $mailConfig;
 
     public function __construct(PDO $db, array $config)
     {
         $this->db = $db;
-        $this->config = $config;
+        $this->config = $config['app'] ?? $config;
+        $this->mailConfig = $config['mail'] ?? [];
     }
 
     public function register(array $data): void
@@ -57,6 +58,15 @@ class AuthController
             'is_active' => 0 
         ]);
 
+        try {
+            require_once __DIR__ . '/../services/TelegramService.php';
+            (new TelegramService())->sendMessage(
+                '🆕 Nuevo usuario registrado: ' . Sanitizer::string($data['name']) . ' / ' . $email
+            );
+        } catch (\Throwable $e) {
+            error_log('Telegram registro: ' . $e->getMessage());
+        }
+
         // 3. Intento de envío de Email (Sin bloquear el registro si falla)
         $mailSent = false;
         try {
@@ -68,17 +78,18 @@ class AuthController
             error_log("Error no crítico en envío de mail: " . $e->getMessage());
         }
 
-        // 4. Generación de JWT y CSRF
+        // 4. Generación de JWT (incluye CSRF para validar sin depender de sesión PHP entre orígenes)
+        $csrf = bin2hex(random_bytes(32));
         $payload = [
             'sub' => $userId,
             'email' => $email,
             'role' => 'USUARIO',
+            'csrf' => $csrf,
             'iat' => time(),
             'exp' => time() + ($this->config['jwt_exp_minutes'] * 60),
         ];
 
         $jwtToken = Jwt::encode($payload, $this->config['jwt_secret']);
-        $csrf = CsrfMiddleware::generateToken();
 
         // 5. LIMPIEZA CRÍTICA: Borra cualquier error o warning de PHP que se haya colado antes
         if (ob_get_length()) ob_clean();
@@ -106,12 +117,19 @@ class AuthController
     try {
         $mail->SMTPDebug = 0; 
         $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com'; 
+        $mail->Host       = $this->mailConfig['host'] ?? 'smtp.gmail.com'; 
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'davila.va.23@gmail.com'; 
-        $mail->Password   = 'ccomelaibupvungs'; // <--- SIN ESPACIOS
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
+        $mail->Username   = $this->mailConfig['username'] ?? ''; 
+        $mail->Password   = $this->mailConfig['password'] ?? ''; 
+        
+        $encryption = strtolower($this->mailConfig['encryption'] ?? 'tls');
+        if ($encryption === 'ssl') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } else {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        }
+        
+        $mail->Port       = (int)($this->mailConfig['port'] ?? 587);
         $mail->CharSet    = 'UTF-8';
 
         $mail->SMTPOptions = array(
@@ -121,8 +139,12 @@ class AuthController
                 'allow_self_signed' => true
             )
         );
-        $logoPath = 'C:/xampp/htdocs/libreria_gabi/frontend/src/assets/logo.png';
-        $mail->setFrom('davila.va.23@gmail.com', 'Librería Gabi');
+        $logoPath = dirname(__DIR__, 2) . '/frontend/src/assets/logo.png';
+        
+        $fromEmail = $this->mailConfig['from_email'] ?? 'no-reply@libreria-gabi.com';
+        $fromName = $this->mailConfig['from_name'] ?? 'Librería Gabi';
+        
+        $mail->setFrom($fromEmail, $fromName);
         $mail->addAddress($email, $name);
         $mail->addEmbeddedImage($logoPath, 'logo_img');
         $mail->isHTML(true);
@@ -189,22 +211,25 @@ class AuthController
         }
 
         $userModel = new User($this->db);
-        $user = $userModel->findByEmail(Sanitizer::string($data['email']));
-        if (!$user || !password_verify($data['password'], $user['password_hash'])) {
+        $email = strtolower(Sanitizer::string((string)($data['email'] ?? '')));
+        $plainPassword = (string)($data['password'] ?? '');
+        $user = $userModel->findByEmail($email);
+        if (!$user || !password_verify($plainPassword, (string)($user['password_hash'] ?? ''))) {
             Response::json(['error' => 'Invalid credentials'], 401);
         }
 
+        $csrf = bin2hex(random_bytes(32));
         $payload = [
             'sub' => $user['id'],
             'email' => $user['email'],
             'role' => $user['role'],
+            'csrf' => $csrf,
             'iat' => time(),
             'exp' => time() + ($this->config['jwt_exp_minutes'] * 60),
             'iss' => $this->config['jwt_issuer'] ?? 'localhost',
         ];
 
         $token = Jwt::encode($payload, $this->config['jwt_secret']);
-        $csrf = CsrfMiddleware::generateToken();
 
         Response::json([
             'token' => $token,
@@ -216,6 +241,31 @@ class AuthController
                 'role' => $user['role'],
                 'is_active' => $user['is_active']
             ],
+        ]);
+    }
+
+    /**
+     * Nuevo par JWT + cabecera X-CSRF-TOKEN (sin rotar sesión PHP).
+     */
+    public function refreshCsrf(array $payload): void
+    {
+        $csrf = bin2hex(random_bytes(32));
+        $newPayload = [
+            'sub' => (int)($payload['sub'] ?? 0),
+            'email' => (string)($payload['email'] ?? ''),
+            'role' => (string)($payload['role'] ?? 'USUARIO'),
+            'csrf' => $csrf,
+            'iat' => time(),
+            'exp' => time() + ((int)($this->config['jwt_exp_minutes'] ?? 60) * 60),
+        ];
+        if (!empty($payload['iss'])) {
+            $newPayload['iss'] = $payload['iss'];
+        }
+
+        $token = Jwt::encode($newPayload, $this->config['jwt_secret']);
+        Response::json([
+            'csrf_token' => $csrf,
+            'token' => $token,
         ]);
     }
 
@@ -237,15 +287,15 @@ class AuthController
         $userModel->activateUser($user['id']);
         $userData = $userModel->findById((int)$user['id']);
 
-        // --- CAMBIO AQUÍ: Usamos 'encode' en lugar de 'create' ---
-        $jwtSecret = $this->config['jwt_secret'] ?? $this->config['app']['jwt_secret'] ?? 'tu_clave_secreta';
-        
-        $tokenJwt = \App\Utils\Jwt::encode([
-            'sub'   => $userData['id'],
-            'name'  => $userData['name'],
-            'role'  => $userData['role'] ?? 'user',
-            'iat'   => time(),
-            'exp'   => time() + (60 * 60 * 24) // Expira en 24h
+        $jwtSecret = $this->config['jwt_secret'] ?? 'tu_clave_secreta';
+        $csrf = bin2hex(random_bytes(32));
+        $tokenJwt = Jwt::encode([
+            'sub' => (int)$userData['id'],
+            'email' => (string)$userData['email'],
+            'role' => (string)($userData['role'] ?? 'USUARIO'),
+            'csrf' => $csrf,
+            'iat' => time(),
+            'exp' => time() + (60 * 60 * 24),
         ], $jwtSecret);
 
         ob_clean(); 
@@ -253,10 +303,13 @@ class AuthController
             'success' => true,
             'message' => '¡Cuenta activada!',
             'token'   => $tokenJwt,
+            'csrf_token' => $csrf,
             'user'    => [
                 'id'    => $userData['id'],
                 'name'  => $userData['name'],
-                'email' => $userData['email']
+                'email' => $userData['email'],
+                'role'  => $userData['role'] ?? 'USUARIO',
+                'is_active' => 1,
             ]
         ]);
         exit;

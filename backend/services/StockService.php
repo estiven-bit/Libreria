@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/TelegramService.php';
+
 class StockService
 {
     private PDO $db;
@@ -20,5 +22,12 @@ class StockService
             'quantity_change' => -$quantity,
             'reason' => $reason,
         ]);
+
+        $check = $this->db->prepare('SELECT name, stock FROM products WHERE id = :id LIMIT 1');
+        $check->execute(['id' => $productId]);
+        $row = $check->fetch();
+        if ($row && (int)$row['stock'] < 5) {
+            (new TelegramService())->notifyLowStock((string)$row['name']);
+        }
     }
 }

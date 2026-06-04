@@ -2,9 +2,14 @@
   <div class="app-shell">
     <NavBar />
     <main class="page">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
     <FooterBar />
+    <ToastStack />
   </div>
 </template>
 
@@ -13,8 +18,11 @@ import { inject, onMounted } from 'vue'
 import { api } from './services/api'
 import NavBar from './components/NavBar.vue'
 import FooterBar from './components/FooterBar.vue'
+import ToastStack from './components/ToastStack.vue'
+import { useCartStore } from './stores/cart'
 
 const store = inject('store')
+const cart = useCartStore()
 
 onMounted(async () => {
   if (store.user) {
@@ -26,7 +34,7 @@ onMounted(async () => {
         price: Number(item.price),
         quantity: Number(item.quantity),
       }))
-      store.setCart(items)
+      cart.setItems(items)
     } catch (error) {
       // fallback: mantener carrito local
     }

@@ -28,6 +28,8 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 // 1. IMPORTACIÓN CORREGIDA: Importamos el objeto 'store' directamente
 import { store } from '../store'; 
+import { useAuthStore } from '../stores/auth';
+import { api } from '../services/api';
 
 const route = useRoute();
 const loading = ref(true);
@@ -48,34 +50,28 @@ onMounted(async () => {
     }
 
     try {
-        const baseUrl = 'http://localhost/libreria_gabi/backend/public/index.php/api/activate';
-        const response = await fetch(`${baseUrl}?token=${token}`);
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("El servidor no respondió con un JSON válido.");
-        }
-
-        const data = await response.json();
+        const data = await api.get(`/api/activate?token=${token}`);
         
         if (data.success) {
             success.value = true;
             
             // 2. LÓGICA DE LOGIN AUTOMÁTICO
             if (data.token && data.user) {
-                // Usamos el método setAuth de tu nuevo store
-                // Esto guarda automáticamente en localStorage ('user' y 'token')
+                if (data.csrf_token) {
+                    localStorage.setItem('csrf_token', data.csrf_token);
+                }
                 store.setAuth(data.user, data.token);
+                useAuthStore().hydrate();
                 
                 console.log("Sesión iniciada automáticamente:", data.user.name);
             }
         } else {
             // Error enviado desde el PHP (ej: Token expirado)
-            errorMessage.value = data.message;
+            errorMessage.value = data.message || "El enlace es inválido o ya ha expirado.";
         }
     } catch (error) {
         console.error("Error en la activación:", error);
-        errorMessage.value = "Error de conexión. Revisa la consola o verifica la cuenta.";
+        errorMessage.value = error.message || "Error de conexión. Revisa la consola o verifica la cuenta.";
     } finally {
         loading.value = false;
     }

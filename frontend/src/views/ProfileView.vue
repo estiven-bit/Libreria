@@ -13,7 +13,7 @@
           <p><strong>Nombre:</strong> {{ store.user.name }}</p>
           <p><strong>Email:</strong> {{ store.user.email }}</p>
         </div>
-        <button class="btn ghost-danger" @click="store.logout()">Cerrar sesión</button>
+        <button class="btn ghost-danger" @click="auth.logout()">Cerrar sesión</button>
       </div>
 
       <div class="card glass-card address-card">
@@ -50,6 +50,11 @@
 import { onMounted, ref } from 'vue'
 import { store } from '../store' 
 import { api } from '../services/api'
+import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
+
+const auth = useAuthStore()
+const toast = useToastStore()
 
 const addresses = ref([])
 const addressLine = ref('')
@@ -78,8 +83,9 @@ const saveAddress = async () => {
     })
     addressLine.value = city.value = postalCode.value = country.value = ''
     await loadAddresses()
+    toast.success('Dirección guardada')
   } catch (error) {
-    alert("Error al guardar la dirección")
+    toast.error(error?.message || 'Error al guardar la dirección')
   }
 }
 

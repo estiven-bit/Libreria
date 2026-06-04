@@ -1,10 +1,25 @@
 import { api } from './api'
-import { store } from '../store'
 
-export async function login(email, password) {
+export function decodeJwtPayload(token) {
+  if (!token) return null
+
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) return null
+
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    return JSON.parse(atob(padded))
+  } catch {
+    return null
+  }
+}
+
+export async function loginRequest(email, password) {
   const data = await api.post('/api/auth/login', { email, password })
-  localStorage.setItem('csrf_token', data.csrf_token)
-  store.setAuth(data.user, data.token)
+  if (data.csrf_token) {
+    localStorage.setItem('csrf_token', data.csrf_token)
+  }
   return data
 }
 

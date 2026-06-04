@@ -27,4 +27,22 @@ class CouponController
         ]);
         Response::json(['message' => 'Coupon created'], 201);
     }
+
+    public function update(int $id, array $data): void
+    {
+        if (!array_key_exists('active', $data)) {
+            Response::json(['error' => 'active required'], 422);
+        }
+        $active = (int)$data['active'] ? 1 : 0;
+        $stmt = $this->db->prepare('UPDATE coupons SET active = :a WHERE id = :id');
+        $stmt->execute(['a' => $active, 'id' => $id]);
+        Response::json(['message' => 'Cupón actualizado']);
+    }
+
+    public function delete(int $id): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM coupons WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        Response::json(['message' => 'Cupón eliminado']);
+    }
 }

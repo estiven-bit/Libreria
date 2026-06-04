@@ -54,4 +54,16 @@ class User extends BaseModel
 
         return (int)$this->db->lastInsertId();
     }
+
+    public function setIsActive(int $id, int $isActive): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET is_active = :a WHERE id = :id');
+        $stmt->execute(['a' => $isActive ? 1 : 0, 'id' => $id]);
+    }
+
+    public function deleteById(int $id): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
 }

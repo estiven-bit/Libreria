@@ -27,6 +27,19 @@
         Carrito
       </RouterLink>
 
+      <RouterLink v-if="store.user" to="/mis-pedidos" @click="isMenuOpen = false">
+        Mis pedidos
+      </RouterLink>
+
+      <RouterLink
+        v-if="isAdmin"
+        to="/admin"
+        class="admin-link"
+        @click="isMenuOpen = false"
+      >
+        Panel Admin
+      </RouterLink>
+
       <RouterLink v-if="!store.user" to="/login" class="login-btn" @click="isMenuOpen = false">
         Login
       </RouterLink>
@@ -39,12 +52,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 // 1. Importamos el store directamente (ajusta la ruta si es necesario)
 import { store } from '../store' 
 
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
+
+const isAdmin = computed(() => (store.user?.role || '') === 'ADMINISTRADOR')
 
 const handleScroll = () => { 
   isScrolled.value = window.scrollY > 50 
@@ -108,6 +123,11 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 /* Estilo para la palabra Carrito */
 .cart-link {
   color: #ff9f43 !important; /* Color resaltado para el carrito */
+}
+
+.admin-link {
+  color: #9be7ff !important;
+  font-weight: 800;
 }
 
 .login-btn {

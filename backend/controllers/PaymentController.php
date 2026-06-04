@@ -2,7 +2,6 @@
 
 require_once __DIR__ . '/../utils/Response.php';
 require_once __DIR__ . '/../services/PaymentService.php';
-require_once __DIR__ . '/../middlewares/CsrfMiddleware.php';
 
 class PaymentController
 {
@@ -15,10 +14,6 @@ class PaymentController
 
     public function create(array $data): void
     {
-        if (!CsrfMiddleware::verify()) {
-            Response::json(['error' => 'Invalid CSRF token'], 403);
-        }
-
         $service = new PaymentService($this->db);
         $result = $service->createPaymentIntent((int)$data['order_id'], $data['provider'] ?? 'stripe');
         Response::json(['data' => $result], 201);

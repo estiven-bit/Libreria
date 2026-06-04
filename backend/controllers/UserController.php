@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../utils/Response.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Address.php';
+require_once __DIR__ . '/../models/Order.php';
 require_once __DIR__ . '/../utils/Sanitizer.php';
 
 class UserController
@@ -41,5 +42,11 @@ class UserController
             'address_line' => Sanitizer::string($data['address_line'] ?? ''),
         ]);
         Response::json(['message' => 'Address added', 'id' => $id], 201);
+    }
+
+    public function orders(int $userId): void
+    {
+        $orderModel = new Order($this->db);
+        Response::json(['data' => $orderModel->listByUser($userId)]);
     }
 }

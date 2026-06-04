@@ -8,7 +8,7 @@
     <section class="section">
       <h2 class="title">Tu Carrito</h2>
 
-      <div v-if="store.cart.length === 0" class="card glass-card empty-cart">
+      <div v-if="cart.items.length === 0" class="card glass-card empty-cart">
         <span class="icon">📚</span>
         <p>Tu carrito está esperando ser llenado de historias.</p>
         <RouterLink to="/catalogo" class="btn btn-save">Explorar Catálogo</RouterLink>
@@ -17,11 +17,12 @@
       <div v-else class="cart-container">
         <div class="cart-list">
           <CartItem
-            v-for="item in store.cart"
+            v-for="item in cart.items"
             :key="item.id"
             :item="item"
             class="glass-card item-row"
-            @update="(qty) => updateItem(item.id, qty)"
+            @inc="() => incItem(item.id)"
+            @dec="() => decItem(item.id)"
             @remove="() => removeItem(item.id)"
           />
         </div>
@@ -29,7 +30,7 @@
         <div class="cart-summary glass-card">
           <div class="total-row">
             <span>Total a pagar:</span>
-            <span class="total-amount">${{ store.cartTotal }}</span>
+            <span class="total-amount">${{ cart.total }}</span>
           </div>
           <RouterLink class="btn btn-checkout" to="/checkout">
             Finalizar Compra
@@ -48,25 +49,39 @@
 import { store } from '../store'
 import { api } from '../services/api'
 import CartItem from '../components/CartItem.vue'
+import { useCartStore } from '../stores/cart'
 
-const updateItem = async (id, qty) => {
-  store.updateCart(id, qty)
+const cart = useCartStore()
+
+const syncQuantity = async (id, qty) => {
   if (store.user) {
     try {
       await api.patch('/api/cart/update', { product_id: id, quantity: qty })
     } catch (e) {
-      console.error("Error actualizando cantidad", e)
+      console.error('Error actualizando cantidad', e)
     }
   }
 }
 
+const incItem = async (id) => {
+  cart.inc(id)
+  const it = cart.items.find((i) => i.id === id)
+  await syncQuantity(id, it?.quantity)
+}
+
+const decItem = async (id) => {
+  cart.dec(id)
+  const it = cart.items.find((i) => i.id === id)
+  await syncQuantity(id, it?.quantity)
+}
+
 const removeItem = async (id) => {
-  store.removeFromCart(id)
+  cart.remove(id)
   if (store.user) {
     try {
-      await api.delete('/api/cart/remove', { data: { product_id: id } })
+      await api.delete('/api/cart/remove', { product_id: id })
     } catch (e) {
-      console.error("Error eliminando producto", e)
+      console.error('Error eliminando producto', e)
     }
   }
 }

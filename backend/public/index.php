@@ -19,11 +19,13 @@ require_once __DIR__ . '/../controllers/CategoryController.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../controllers/PaymentController.php';
+require_once __DIR__ . '/../controllers/CheckoutController.php';
 require_once __DIR__ . '/../controllers/UserController.php';
 require_once __DIR__ . '/../controllers/AdminController.php';
 require_once __DIR__ . '/../controllers/CouponController.php';
 require_once __DIR__ . '/../controllers/UploadController.php';
 require_once __DIR__ . '/../services/UploadService.php';
+require_once __DIR__ . '/../models/Log.php';
 
 $config = require __DIR__ . '/../config/config.php';
 $db = require __DIR__ . '/../config/database.php';
@@ -34,6 +36,18 @@ RateLimitMiddleware::handle($config['app']);
 
 $logger = new Logger($config['app']['logs_path']);
 $logger->info('request', ['method' => $_SERVER['REQUEST_METHOD'], 'uri' => $_SERVER['REQUEST_URI']]);
+
+// Log mínimo en DB (tabla logs) para el panel admin
+try {
+    (new Log($db))->create(json_encode([
+        'type' => 'request',
+        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+    ], JSON_UNESCAPED_SLASHES));
+} catch (\Throwable $e) {
+    // No bloqueamos la request si el log falla
+}
 
 $routes = require __DIR__ . '/../routes/api.php';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -97,7 +111,14 @@ if ($handler === 'health') {
 
 // Reglas de acceso
 $user = null;
-if (str_starts_with($handler, 'admin.') || str_starts_with($handler, 'cart.') || str_starts_with($handler, 'orders.') || str_starts_with($handler, 'user.')) {
+if (
+    str_starts_with($handler, 'admin.')
+    || str_starts_with($handler, 'cart.')
+    || str_starts_with($handler, 'orders.')
+    || str_starts_with($handler, 'user.')
+    || $handler === 'payment.create'
+    || str_starts_with($handler, 'checkout.')
+) {
     $user = AuthMiddleware::requireAuth($config['app']);
 }
 
@@ -105,9 +126,9 @@ if (str_starts_with($handler, 'admin.')) {
     AdminMiddleware::requireAdmin($user);
 }
 
-// CSRF
+// CSRF (usa claim csrf del JWT cuando hay usuario autenticado)
 if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true) && $user) {
-    if (!CsrfMiddleware::verify()) {
+    if (!CsrfMiddleware::verify($user)) {
         Response::json(['error' => 'Invalid CSRF token'], 403);
         exit;
     }
@@ -116,31 +137,39 @@ if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true) && $user) {
 // Ejecución de controladores
 switch ($handler) {
     case 'auth.register':
-        (new AuthController($db, $config['app']))->register($body);
+        (new AuthController($db, $config))->register($body);
         break;
     case 'auth.activate':
-        (new AuthController($db, $config['app']))->activate($_GET); // Usamos $_GET porque el token viene en la URL
+        (new AuthController($db, $config))->activate($_GET); // Usamos $_GET porque el token viene en la URL
         break;
     case 'auth.login':
-        (new AuthController($db, $config['app']))->login($body);
+        (new AuthController($db, $config))->login($body);
+        break;
+    case 'auth.csrf':
+        $payload = AuthMiddleware::user($config['app']);
+        if (!$payload) {
+            Response::json(['error' => 'Unauthorized'], 401);
+            exit;
+        }
+        (new AuthController($db, $config))->refreshCsrf($payload);
         break;
     case 'categories.list':
         (new CategoryController($db))->list();
         break;
     case 'products.list':
-        (new ProductController($db))->list($_GET);
+        (new ProductController($db, $config['app']))->list($_GET);
         break;
     case 'products.show':
-        (new ProductController($db))->show((int)$params[0]);
+        (new ProductController($db, $config['app']))->show((int)$params[0]);
         break;
     case 'products.create':
-        (new ProductController($db))->create($body);
+        (new ProductController($db, $config['app']))->create($body);
         break;
     case 'products.update':
-        (new ProductController($db))->update((int)$params[0], $body);
+        (new ProductController($db, $config['app']))->update((int)$params[0], $body);
         break;
     case 'products.delete':
-        (new ProductController($db))->delete((int)$params[0]);
+        (new ProductController($db, $config['app']))->delete((int)$params[0]);
         break;
     case 'cart.get':
         (new CartController($db))->get((int)$user['sub']);
@@ -172,6 +201,12 @@ switch ($handler) {
     case 'payment.webhook':
         (new PaymentController($db))->webhook($body);
         break;
+    case 'checkout.createSession':
+        (new CheckoutController($db, $config))->createSession((int)$user['sub'], $body);
+        break;
+    case 'checkout.confirmSession':
+        (new CheckoutController($db, $config))->confirmSession((int)$user['sub'], $body);
+        break;
     case 'user.profile':
         (new UserController($db))->profile((int)$user['sub']);
         break;
@@ -181,17 +216,44 @@ switch ($handler) {
     case 'user.addAddress':
         (new UserController($db))->addAddress((int)$user['sub'], $body);
         break;
+    case 'user.orders':
+        (new UserController($db))->orders((int)$user['sub']);
+        break;
     case 'admin.stats':
         (new AdminController($db))->stats();
         break;
     case 'admin.users':
         (new AdminController($db))->users();
         break;
-    case 'coupons.list':
+    case 'admin.users.patch':
+        (new AdminController($db))->updateUser((int)$params[0], $body);
+        break;
+    case 'admin.users.delete':
+        (new AdminController($db))->deleteUser((int)$params[0]);
+        break;
+    case 'admin.orders':
+        (new AdminController($db))->orders();
+        break;
+    case 'admin.orders.updateStatus':
+        (new AdminController($db))->updateOrderStatus((int)$params[0], $body);
+        break;
+    case 'admin.logs':
+        (new AdminController($db))->logs($_GET);
+        break;
+    case 'admin.coupons.list':
         (new CouponController($db))->list();
         break;
-    case 'coupons.create':
+    case 'admin.coupons.create':
         (new CouponController($db))->create($body);
+        break;
+    case 'admin.coupons.patch':
+        (new CouponController($db))->update((int)$params[0], $body);
+        break;
+    case 'admin.coupons.delete':
+        (new CouponController($db))->delete((int)$params[0]);
+        break;
+    case 'admin.products.addImage':
+        (new ProductController($db, $config['app']))->uploadProductImage((int)$params[0]);
         break;
     case 'admin.upload':
         $service = new UploadService($config['app']['uploads_path']);

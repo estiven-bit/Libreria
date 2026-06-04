@@ -67,7 +67,7 @@ class OrderController
         $email = new EmailService($this->config['mail']);
         $email->sendOrderConfirmation($data['user_email'] ?? '', $orderId);
 
-        Response::json(['message' => 'Order created', 'order_id' => $orderId], 201);
+        Response::json(['status' => 'success', 'order_id' => $orderId], 201);
     }
 
     public function cancel(int $userId, int $orderId): void

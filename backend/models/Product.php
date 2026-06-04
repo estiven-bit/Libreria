@@ -33,6 +33,36 @@ class Product extends BaseModel
         return $product ?: null;
     }
 
+    /**
+     * Producto con categoría e imágenes (para detalle).
+     */
+    public function findWithDetails(int $id): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT p.*, c.name AS category_name, c.parent_id AS category_parent_id
+             FROM products p
+             LEFT JOIN categories c ON c.id = p.category_id
+             WHERE p.id = :id
+             LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $product = $stmt->fetch();
+        if (!$product) {
+            return null;
+        }
+
+        $img = $this->db->prepare('SELECT id, image_url FROM product_images WHERE product_id = :pid ORDER BY id ASC');
+        $img->execute(['pid' => $id]);
+        $product['images'] = $img->fetchAll();
+        $product['category'] = [
+            'id' => $product['category_id'] !== null ? (int)$product['category_id'] : null,
+            'name' => $product['category_name'] ?? null,
+            'parent_id' => isset($product['category_parent_id']) ? $product['category_parent_id'] : null,
+        ];
+
+        return $product;
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('INSERT INTO products (name, description, price, stock, category_id, created_at) VALUES (:name, :description, :price, :stock, :category_id, NOW())');
