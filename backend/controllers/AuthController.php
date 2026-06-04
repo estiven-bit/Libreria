@@ -5,7 +5,7 @@ require_once __DIR__ . '/../utils/Validator.php';
 require_once __DIR__ . '/../utils/Sanitizer.php';
 require_once __DIR__ . '/../utils/Jwt.php';
 require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../public/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

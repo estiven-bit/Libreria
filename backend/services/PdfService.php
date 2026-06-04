@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../public/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 class PdfService
 {
@@ -89,7 +89,7 @@ class PdfService
         $pdf->SetY(105);
         $pdf->SetFont('Arial', 'I', 9);
         $pdf->SetTextColor(148, 163, 184);
-        $pdf->Cell(0, 10, "------------------------- LINEAS PARA RECORTAR -------------------------", 0, 1, 'C');
+        $pdf->Cell(0, 10, "----------------------------------------------------------------------------", 0, 1, 'C');
 
         // ==========================================
         // 3. SECCIÓN INFERIOR (TICKET DE COMPRA)
