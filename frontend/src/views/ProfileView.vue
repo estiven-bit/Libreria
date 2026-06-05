@@ -7,22 +7,30 @@
 
     <section class="section">
       <h2 class="title">Mi Perfil</h2>
-      
-      <div class="card glass-card profile-card" v-if="store.user">
+
+      <!-- Card de info de usuario -->
+      <div class="glass-card profile-card" v-if="store.user">
+        <div class="user-avatar-circle">
+          {{ store.user.name.charAt(0).toUpperCase() }}
+        </div>
         <div class="user-info">
-          <p><strong>Nombre:</strong> {{ store.user.name }}</p>
-          <p><strong>Email:</strong> {{ store.user.email }}</p>
+          <p class="user-name">{{ store.user.name }}</p>
+          <p class="user-email">{{ store.user.email }}</p>
         </div>
         <button class="btn ghost-danger" @click="auth.logout()">Cerrar sesión</button>
       </div>
 
-      <div class="card glass-card address-card">
+      <!-- Card de direcciones -->
+      <div class="glass-card address-card">
         <h3>Mis Direcciones</h3>
-        
+
         <ul v-if="addresses.length > 0" class="address-list">
           <li v-for="addr in addresses" :key="addr.id" class="address-item">
-            <span class="icon">📍</span>
-            {{ addr.address_line }}, {{ addr.city }} ({{ addr.postal_code }})
+            <div class="addr-text">
+              <span class="addr-line">{{ addr.address_line }}</span>
+              <span class="addr-detail">{{ addr.city }}<span v-if="addr.postal_code">, {{ addr.postal_code }}</span><span v-if="addr.country"> — {{ addr.country }}</span></span>
+            </div>
+            <button class="btn-delete" @click="deleteAddress(addr.id)" title="Eliminar dirección">✕</button>
           </li>
         </ul>
         <p v-else class="empty-text">No tienes direcciones guardadas.</p>
@@ -31,13 +39,25 @@
 
         <h4>Agregar nueva dirección</h4>
         <div class="address-form">
-          <div class="input-group">
-            <input v-model="addressLine" class="input glass-input" placeholder="Dirección" />
-            <input v-model="city" class="input glass-input" placeholder="Ciudad" />
+          <div class="form-row">
+            <div class="form-field">
+              <label>Dirección</label>
+              <input v-model="addressLine" class="input glass-input" placeholder="Ej. Calle Principal 123" />
+            </div>
+            <div class="form-field">
+              <label>Ciudad</label>
+              <input v-model="city" class="input glass-input" placeholder="Ej. Yantzaza" />
+            </div>
           </div>
-          <div class="input-group">
-            <input v-model="postalCode" class="input glass-input" placeholder="Código postal" />
-            <input v-model="country" class="input glass-input" placeholder="País" />
+          <div class="form-row">
+            <div class="form-field">
+              <label>Código postal</label>
+              <input v-model="postalCode" class="input glass-input" placeholder="Ej. 19001" />
+            </div>
+            <div class="form-field">
+              <label>País</label>
+              <input v-model="country" class="input glass-input" placeholder="Ej. Ecuador" />
+            </div>
           </div>
           <button class="btn btn-save" @click="saveAddress">Guardar Dirección</button>
         </div>
@@ -48,7 +68,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { store } from '../store' 
+import { store } from '../store'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
@@ -65,15 +85,15 @@ const country = ref('')
 const loadAddresses = async () => {
   try {
     const res = await api.get('/api/user/addresses')
-    addresses.value = res.data || res || [] 
+    addresses.value = res.data || res || []
   } catch (error) {
     console.error("Error cargando direcciones:", error)
   }
 }
 
 const saveAddress = async () => {
-  if (!addressLine.value || !city.value) return alert("Completa los campos principales")
-  
+  if (!addressLine.value || !city.value) return toast.error("Completa los campos obligatorios: dirección y ciudad")
+
   try {
     await api.post('/api/user/addresses', {
       address_line: addressLine.value,
@@ -89,6 +109,17 @@ const saveAddress = async () => {
   }
 }
 
+const deleteAddress = async (id) => {
+  if (!confirm('¿Seguro que quieres borrar esta dirección?')) return
+  try {
+    await api.delete(`/api/user/addresses/${id}`)
+    await loadAddresses()
+    toast.success('Dirección eliminada')
+  } catch (error) {
+    toast.error(error?.message || 'Error al eliminar la dirección')
+  }
+}
+
 onMounted(loadAddresses)
 </script>
 
@@ -96,141 +127,262 @@ onMounted(loadAddresses)
 .page-container {
   position: relative;
   min-height: calc(100vh - 88px);
-  padding-top: 20px;
+  padding: 30px 20px 40px;
   display: flex;
   justify-content: center;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Estilos del Video de Fondo */
+/* Video de Fondo */
 .video-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   object-fit: cover;
   z-index: -1;
 }
 
 .section {
-  max-width: 800px;
+  max-width: 760px;
   width: 100%;
-  padding: 20px;
   z-index: 1;
 }
 
-/* Título con borde reforzado */
+/* Título */
 .title {
   color: #ffffff;
   margin-bottom: 20px;
   font-size: 2rem;
-  /* Sombra negra sólida para simular borde */
   text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
 }
 
-/* EFECTO TRANSLÚCIDO (Glassmorphism) */
+/* Glassmorphism cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px) saturate(180%);
-  -webkit-backdrop-filter: blur(15px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
   color: #ffffff;
-  /* Borde negro sutil para todo el texto dentro de la tarjeta */
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.card {
-  padding: 30px;
-  margin-bottom: 25px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+/* Profile card: avatar + info + botón en fila */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
-.card h3, .card h4 {
+.user-avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0 4px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+.user-email {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.9rem;
+  margin: 0;
+  text-shadow: none;
+}
+
+/* Address card */
+.address-card h3 {
   color: #ff9f43;
-  margin-bottom: 15px;
-  /* Resalte extra para los encabezados naranjas */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-/* Inputs Translúcidos */
+.address-card h4 {
+  color: #ff9f43;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Lista de direcciones */
+.address-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.address-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.address-item:last-child {
+  border-bottom: none;
+}
+
+.addr-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.addr-line {
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.6);
+}
+
+.addr-detail {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.65);
+}
+
+.btn-delete {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ff8e8e;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.35);
+  transform: scale(1.1);
+}
+
+/* Formulario de nueva dirección */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Inputs */
 .glass-input {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
   color: white !important;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .glass-input::placeholder {
-  color: rgba(255, 255, 255, 0.8);
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.9);;
-}
-
-.input-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .input {
-  padding: 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
   outline: none;
   transition: all 0.3s;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input:focus {
-  border-color: #ff9f43;
-  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: #ff9f43 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
+/* Botones */
 .btn {
-  padding: 12px 25px;
+  padding: 10px 22px;
   border-radius: 50px;
   border: none;
   font-weight: 700;
   cursor: pointer;
   transition: 0.3s;
-  /* Borde en el texto de los botones */
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .btn-save {
-  background: #ff9f43;
+  background: linear-gradient(135deg, #ff9f43, #ff6b6b);
   color: white;
-  margin-top: 10px;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
 .btn-save:hover {
-  background: #ff8c1a;
+  filter: brightness(1.1);
   transform: translateY(-2px);
 }
 
 .ghost-danger {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   color: #ff8e8e;
-  border: 1px solid #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  margin-left: auto;
+  font-size: 0.88rem;
 }
 
 .ghost-danger:hover {
-  background: rgba(239, 68, 68, 0.4);
-}
-
-.address-item {
-  padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
+  background: rgba(239, 68, 68, 0.3);
 }
 
 .divider {
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  margin: 25px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 18px 0;
 }
 
 .empty-text {
-  color: #cbd5e1;
+  color: rgba(255,255,255,0.55);
   font-style: italic;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .profile-card { flex-direction: column; align-items: flex-start; }
+  .ghost-danger { margin-left: 0; }
 }
 </style>

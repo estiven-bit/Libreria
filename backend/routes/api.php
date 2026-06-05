@@ -35,6 +35,7 @@ return [
     ['GET', '/api/user/profile', 'user.profile'],
     ['GET', '/api/user/addresses', 'user.addresses'],
     ['POST', '/api/user/addresses', 'user.addAddress'],
+    ['DELETE', '/api/user/addresses/{id}', 'user.deleteAddress'],
     ['GET', '/api/user/orders', 'user.orders'],
 
     ['GET', '/api/admin/stats', 'admin.stats'],

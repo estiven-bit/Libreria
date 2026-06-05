@@ -49,4 +49,15 @@ class UserController
         $orderModel = new Order($this->db);
         Response::json(['data' => $orderModel->listByUser($userId)]);
     }
+
+    public function deleteAddress(int $userId, int $addressId): void
+    {
+        $model = new Address($this->db);
+        $deleted = $model->deleteByUser($userId, $addressId);
+        if ($deleted) {
+            Response::json(['message' => 'Dirección eliminada']);
+        } else {
+            Response::json(['error' => 'Dirección no encontrada o no autorizada'], 404);
+        }
+    }
 }

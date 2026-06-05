@@ -23,4 +23,11 @@ class Address extends BaseModel
         ]);
         return (int)$this->db->lastInsertId();
     }
+
+    public function deleteByUser(int $userId, int $addressId): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM addresses WHERE id = :id AND user_id = :user_id');
+        $stmt->execute(['id' => $addressId, 'user_id' => $userId]);
+        return $stmt->rowCount() > 0;
+    }
 }

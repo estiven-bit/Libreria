@@ -222,6 +222,9 @@ switch ($handler) {
     case 'user.addAddress':
         (new UserController($db))->addAddress((int)$user['sub'], $body);
         break;
+    case 'user.deleteAddress':
+        (new UserController($db))->deleteAddress((int)$user['sub'], (int)$params[0]);
+        break;
     case 'user.orders':
         (new UserController($db))->orders((int)$user['sub']);
         break;
