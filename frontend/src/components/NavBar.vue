@@ -112,6 +112,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   transition: all 0.4s ease;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
   pointer-events: none; 
+  border-radius: 12px;
 }
 .nav.scrolled .nav-logo { height: 55px; }
 
