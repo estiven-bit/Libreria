@@ -108,12 +108,12 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 .nav.scrolled .brand-logo-container { height: 65px; }
 
 .nav-logo {
-  height: 65px; width: auto;
+  height: 70px; width: auto;
   transition: all 0.4s ease;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
   pointer-events: none; 
 }
-.nav.scrolled .nav-logo { height: 50px; }
+.nav.scrolled .nav-logo { height: 55px; }
 
 /* --- NAVEGACIÓN --- */
 .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; padding: 0; margin: 0; }
