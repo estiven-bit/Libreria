@@ -45,4 +45,10 @@ class CouponController
         $stmt->execute(['id' => $id]);
         Response::json(['message' => 'Cupón eliminado']);
     }
+
+    public function listActive(): void
+    {
+        $stmt = $this->db->query('SELECT * FROM coupons WHERE active = 1 ORDER BY id DESC');
+        Response::json(['data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    }
 }

@@ -30,17 +30,33 @@
         </div>
       </div>
 
-      <div class="hero-card">
+      <div v-if="activeCoupon" class="hero-card">
         <h3 class="text-with-border">Promocion</h3>
-        <p class="text-with-border">Cupon de bienvenida: <br> <strong>GABI10</strong></p>
-        <span class="discount-badge">10% de descuento</span>
+        <p class="text-with-border">Cupon: <br> <strong>{{ activeCoupon.code }}</strong></p>
+        <span class="discount-badge">{{ activeCoupon.discount_percentage }}% de descuento</span>
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue'
 import { store } from '../store'
+import { api } from '../services/api'
+
+const activeCoupon = ref(null)
+
+onMounted(async () => {
+  try {
+    const res = await api.get('/api/coupons/active')
+    const list = res.data || res || []
+    if (list.length > 0) {
+      activeCoupon.value = list[0]
+    }
+  } catch (error) {
+    console.error('Error cargando cupones activos:', error)
+  }
+})
 </script>
 
 <style scoped>

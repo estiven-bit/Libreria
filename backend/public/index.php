@@ -159,6 +159,9 @@ switch ($handler) {
     case 'categories.list':
         (new CategoryController($db))->list();
         break;
+    case 'coupons.active':
+        (new CouponController($db))->listActive();
+        break;
     case 'products.list':
         (new ProductController($db, $config['app']))->list($_GET);
         break;

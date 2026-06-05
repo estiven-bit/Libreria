@@ -8,6 +8,7 @@ return [
     ['POST', '/api/auth/login', 'auth.login'],
     ['GET', '/api/auth/csrf', 'auth.csrf'],
     ['GET', '/api/activate', 'auth.activate'],
+    ['GET', '/api/coupons/active', 'coupons.active'],
 
     ['GET', '/categories', 'categories.list'],
     ['GET', '/api/categories', 'categories.list'],
