@@ -12,11 +12,6 @@ class CorsMiddleware
 
         $isAllowed = in_array($origin, $allowed, true)
             || (str_ends_with($origin, '.vercel.app') && $origin !== '');
-
-        header('X-Debug-Origin: ' . $origin);
-        header('X-Debug-Allowed: ' . json_encode($allowed));
-        header('X-Debug-IsAllowed: ' . ($isAllowed ? 'yes' : 'no'));
-
         if ($isAllowed) {
             header('Access-Control-Allow-Origin: ' . $origin);
         } elseif (!empty($allowed)) {
