@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost/libreria_gabi/backend/public/index.php'
+const API_BASE = import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app'
 
 function isAuthFailureEndpoint(path) {
   const p = path.startsWith('/') ? path : `/${path}`

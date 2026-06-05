@@ -5,6 +5,7 @@ vendor/
 # Ignorar archivos de configuración personal
 .env
 backend/.env
+frontend/.env.local
 .htaccess
 
 # Ignorar archivos de log y temporales
