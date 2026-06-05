@@ -29,12 +29,14 @@
 })();
 
 // Helper robusto: lee vars de entorno desde getenv(), $_ENV y $_SERVER (necesario en Vercel PHP)
-function env(string $key, string $default = ''): string {
-    $v = getenv($key);
-    if ($v !== false && $v !== '') return $v;
-    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
-    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
-    return $default;
+if (!function_exists('env')) {
+    function env(string $key, string $default = ''): string {
+        $v = getenv($key);
+        if ($v !== false && $v !== '') return $v;
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
+        return $default;
+    }
 }
 
 // Global configuration with sensible defaults for local development.
