@@ -179,11 +179,11 @@ const handleRegister = async () => {
 }
 
 .auth-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 88px);
   display: flex;
   align-items: center;
   justify-content: flex-end; 
-  padding: 100px 10% 40px 0;
+  padding: 40px 10% 40px 0;
   box-sizing: border-box;
 }
 
@@ -192,7 +192,7 @@ const handleRegister = async () => {
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 30px;
+  padding: 20px 25px;
   width: 100%;
   max-width: 400px;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
@@ -204,22 +204,22 @@ const handleRegister = async () => {
   to { opacity: 1; transform: translateX(0); }
 }
 
-.form-header { text-align: center; margin-bottom: 20px; }
-.form-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
-.form-header h2 { color: #f8fafc; font-size: 1.6rem; font-weight: 700; margin: 0; }
-.form-header p { color: #cbd5e1; font-size: 0.85rem; margin-top: 5px; }
+.form-header { text-align: center; margin-bottom: 12px; }
+.form-icon { font-size: 1.8rem; margin-bottom: 4px; display: block; }
+.form-header h2 { color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0; }
+.form-header p { color: #cbd5e1; font-size: 0.8rem; margin-top: 2px; }
 
-.form-body { display: flex; flex-direction: column; gap: 12px; }
-.input-group { display: flex; flex-direction: column; gap: 5px; }
-.input-group label { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.form-body { display: flex; flex-direction: column; gap: 8px; }
+.input-group { display: flex; flex-direction: column; gap: 2px; }
+.input-group label { color: #94a3b8; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
 
 .input {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 8px 12px;
   color: #f1f5f9;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: 0.3s;
 }
 
@@ -230,10 +230,10 @@ const handleRegister = async () => {
 }
 
 .btn-submit {
-  margin-top: 15px;
+  margin-top: 10px;
   background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
   color: white;
-  padding: 14px;
+  padding: 12px;
   border-radius: 10px;
   border: none;
   font-weight: 700;
@@ -248,23 +248,23 @@ const handleRegister = async () => {
   box-shadow: 0 10px 15px rgba(255, 107, 107, 0.3);
 }
 
-.messages { margin-top: 15px; text-align: center; font-size: 0.9rem; }
+.messages { margin-top: 10px; text-align: center; font-size: 0.85rem; }
 .success { color: #4ade80; }
 .error { color: #f87171; }
 
 .form-footer {
-  margin-top: 20px;
+  margin-top: 12px;
   text-align: center;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 15px;
+  padding-top: 10px;
 }
-.form-footer p { color: #f1f5f9; font-size: 0.9rem; }
+.form-footer p { color: #f1f5f9; font-size: 0.85rem; }
 .form-footer a { color: #38bdf8; text-decoration: none; font-weight: 600; }
 
 @media (max-width: 992px) {
   .auth-container {
     justify-content: center;
-    padding: 100px 20px 40px 20px;
+    padding: 30px 20px;
   }
 }
 </style>

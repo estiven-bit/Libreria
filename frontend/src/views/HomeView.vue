@@ -65,11 +65,11 @@ import { store } from '../store'
 }
 .hero {
   position: relative;
-  min-height: 100vh;
+  min-height: calc(100vh - 88px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8%;
+  padding: 40px 8%;
   color: #fff;
 }
 .hero-content { max-width: 550px; text-align: left; }

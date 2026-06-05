@@ -95,8 +95,8 @@ onMounted(loadAddresses)
 <style scoped>
 .page-container {
   position: relative;
-  min-height: 100vh;
-  padding-top: 100px;
+  min-height: calc(100vh - 88px);
+  padding-top: 20px;
   display: flex;
   justify-content: center;
   overflow: hidden;

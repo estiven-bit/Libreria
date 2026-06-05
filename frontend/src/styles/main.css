@@ -122,3 +122,41 @@ body {
   border: 2px solid #f0f0f0;
   margin-bottom: 12px;
 }
+
+/* TARJETA GLOBAL (CARD) */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  margin-bottom: 1rem;
+}
+
+/* RESPONSIVE PANEL DE ADMINISTRACIÓN */
+@media (max-width: 768px) {
+  .section.admin {
+    flex-direction: column;
+    padding: 0 4% 2rem;
+    gap: 1rem;
+  }
+
+  .admin-sidebar {
+    flex: 1 1 auto;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .admin-sidebar a {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .admin-content {
+    width: 100%;
+  }
+}

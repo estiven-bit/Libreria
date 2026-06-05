@@ -173,7 +173,7 @@ onMounted(loadAddresses)
 </script>
 
 <style scoped>
-.section { padding: 120px 8% 40px; }
+.section { padding: 40px 8% 40px; }
 .activation-warning {
   background: #fff3cd;
   color: #856404;

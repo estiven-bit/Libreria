@@ -132,7 +132,7 @@ watch(() => route.query.categoria, (newVal) => {
 
 /* --- LAYOUT --- */
 .section-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 88px);
 }
 
 .catalog-layout {
@@ -223,7 +223,6 @@ watch(() => route.query.categoria, (newVal) => {
 /* --- COLUMNA DE RESULTADOS --- */
 .products-container {
   padding: 100px 0;
-  padding-left: 600px;
 }
 
 .products-vertical-column {

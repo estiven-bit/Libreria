@@ -90,8 +90,8 @@ const removeItem = async (id) => {
 <style scoped>
 .page-container {
   position: relative;
-  min-height: 100vh;
-  padding: 120px 20px 50px;
+  min-height: calc(100vh - 88px);
+  padding: 40px 20px;
   display: flex;
   justify-content: center;
 }

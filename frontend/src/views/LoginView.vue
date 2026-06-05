@@ -111,21 +111,21 @@ const handleLogin = async () => {
   background: rgba(15, 23, 42, 0.3);
 }
 .login-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 88px);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .login-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
-  padding: 0 8%;
+  min-height: calc(100vh - 88px);
+  padding: 40px 8%;
   align-items: center;
 }
 .login-card {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  padding: 50px;
+  padding: 30px 35px;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
@@ -144,18 +144,18 @@ const handleLogin = async () => {
   width: 60px;
   height: 5px;
   background: #ff9f43;
-  margin: 20px 0;
+  margin: 12px 0;
   border-radius: 2px;
 }
 .subtitle {
   color: #ffffff;
   font-size: 1rem;
-  margin-bottom: 35px;
+  margin-bottom: 20px;
   font-weight: 500;
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 .login-form { text-align: left; }
-.form-group { margin-bottom: 25px; }
+.form-group { margin-bottom: 16px; }
 label {
   display: block;
   font-weight: 800;
@@ -167,7 +167,7 @@ label {
 }
 input {
   width: 100%;
-  padding: 16px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.95);
   border: 2px solid transparent;
   border-radius: 12px;
@@ -184,7 +184,7 @@ input:focus {
   width: 100%;
   background: linear-gradient(135deg, #ff9f43, #ff6b6b);
   color: white;
-  padding: 18px;
+  padding: 14px;
   border: none;
   border-radius: 50px;
   font-weight: 800;
@@ -200,8 +200,8 @@ input:focus {
   filter: brightness(1.1);
 }
 .register-cta {
-  margin-top: 35px;
-  padding-top: 25px;
+  margin-top: 20px;
+  padding-top: 15px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 .register-cta p { color: #ffffff; font-weight: 500; }
