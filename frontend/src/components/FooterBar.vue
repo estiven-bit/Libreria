@@ -19,20 +19,10 @@
         </div>
       </div>
 
-      <!-- Marquesina de Contacto (Paso de izquierda a derecha) -->
+      <!-- Marquesina de Contacto (Paso de izquierda a derecha en bucle sin fin) -->
       <div class="footer-marquee">
         <div class="marquee-inner">
-          <span class="marquee-item">Yantzaza, Ecuador</span>
-          <span class="marquee-separator">•</span>
-          <span class="marquee-item">info@libreria-gabi.com</span>
-          <span class="marquee-separator">•</span>
-          <span class="marquee-item">+593 999 999 999</span>
-          <span class="marquee-separator">•</span>
-          <span class="marquee-item">Yantzaza, Ecuador</span>
-          <span class="marquee-separator">•</span>
-          <span class="marquee-item">info@libreria-gabi.com</span>
-          <span class="marquee-separator">•</span>
-          <span class="marquee-item">+593 999 999 999</span>
+          <span class="marquee-item">Yantzaza, Ecuador</span><span class="marquee-separator">•</span><span class="marquee-item">info@libreria-gabi.com</span><span class="marquee-separator">•</span><span class="marquee-item">+593 999 999 999</span><span class="marquee-separator">•</span><span class="marquee-item">Yantzaza, Ecuador</span><span class="marquee-separator">•</span><span class="marquee-item">info@libreria-gabi.com</span><span class="marquee-separator">•</span><span class="marquee-item">+593 999 999 999</span><span class="marquee-separator">•</span><span class="marquee-item">Yantzaza, Ecuador</span><span class="marquee-separator">•</span><span class="marquee-item">info@libreria-gabi.com</span><span class="marquee-separator">•</span><span class="marquee-item">+593 999 999 999</span><span class="marquee-separator">•</span><span class="marquee-item">Yantzaza, Ecuador</span><span class="marquee-separator">•</span><span class="marquee-item">info@libreria-gabi.com</span><span class="marquee-separator">•</span><span class="marquee-item">+593 999 999 999</span><span class="marquee-separator">•</span>
         </div>
       </div>
 
@@ -157,7 +147,7 @@
 
 @keyframes marquee-left-to-right {
   0% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-25%, 0, 0);
   }
   100% {
     transform: translate3d(0%, 0, 0);
