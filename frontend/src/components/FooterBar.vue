@@ -10,24 +10,33 @@
         </div>
 
         <div class="footer-section">
-          <h4>Contacto</h4>
-          <ul class="footer-links">
-            <li>Yantzaza, Ecuador</li>
-            <li>info@libreria-gabi.com</li>
-            <li>+593 999 999 999</li>
-          </ul>
-        </div>
-
-        <div class="footer-section">
           <h4>Síguenos</h4>
           <div class="social-icons">
             <a href="#" class="social-link">FB</a>
             <a href="#" class="social-link">IG</a>
             <a href="#" class="social-link">TK</a>
           </div>
-          <p class="copyright">© 2026 Librería Gabi. <br> Todos los derechos reservados.</p>
         </div>
       </div>
+
+      <!-- Marquesina de Contacto (Paso de izquierda a derecha) -->
+      <div class="footer-marquee">
+        <div class="marquee-inner">
+          <span class="marquee-item">Yantzaza, Ecuador</span>
+          <span class="marquee-separator">•</span>
+          <span class="marquee-item">info@libreria-gabi.com</span>
+          <span class="marquee-separator">•</span>
+          <span class="marquee-item">+593 999 999 999</span>
+          <span class="marquee-separator">•</span>
+          <span class="marquee-item">Yantzaza, Ecuador</span>
+          <span class="marquee-separator">•</span>
+          <span class="marquee-item">info@libreria-gabi.com</span>
+          <span class="marquee-separator">•</span>
+          <span class="marquee-item">+593 999 999 999</span>
+        </div>
+      </div>
+
+      <p class="copyright">© 2026 Librería Gabi. Todos los derechos reservados.</p>
     </div>
   </footer>
 </template>
@@ -37,7 +46,7 @@
   /* Fondo y colores */
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #ffffff;
-  padding: 60px 0;
+  padding: 40px 0 10px;
 
   /* --- AQUÍ ESTÁ EL TRUCO PARA RELLENAR EL ANCHO --- */
   width: 100vw;           /* 100% del ancho de la ventana del navegador */
@@ -89,18 +98,6 @@
   max-width: 400px;
 }
 
-.footer-links {
-  list-style: none;
-  padding: 0;
-}
-
-.footer-links li {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .social-icons {
   display: flex;
   gap: 15px;
@@ -127,12 +124,54 @@
   transform: translateY(-5px);
 }
 
+/* --- ESTILOS DE LA MARQUESINA --- */
+.footer-marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 0;
+}
+
+.marquee-inner {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee-left-to-right 20s linear infinite;
+  color: #ff9f43;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.marquee-item {
+  margin: 0 20px;
+}
+
+.marquee-separator {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes marquee-left-to-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0%, 0, 0);
+  }
+}
+
 .copyright {
-  margin-top: 40px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 20px;
+  margin-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 15px;
   font-size: 0.85rem;
   color: #888;
+  text-align: center;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -148,4 +187,3 @@
     display: none;
   }
 }
-</style>

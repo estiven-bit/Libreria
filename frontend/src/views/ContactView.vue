@@ -76,8 +76,8 @@
 
 /* --- CONTENEDOR (Padding superior ajustado y menos inferior) --- */
 .about-section {
-  min-height: 100vh;
-  padding: 60px 5% 40px; /* Reducido de 100px a 60px arriba y 40px abajo */
+  min-height: calc(100vh - 88px);
+  padding: 20px 5% 20px; /* Ajustado para subir el contenido */
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
@@ -93,7 +93,7 @@
 /* --- HEADER --- */
 .about-header {
   text-align: center;
-  margin-bottom: 40px; /* Reducido de 60px a 40px */
+  margin-bottom: 25px; /* Reducido para ahorrar espacio vertical */
 }
 
 h1 {
@@ -122,8 +122,8 @@ h1 {
 .about-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px; /* Reducido de 30px a 20px */
-  margin-bottom: 30px; /* Reducido de 50px a 30px */
+  gap: 20px;
+  margin-bottom: 20px; /* Reducido para subir la sección de contacto */
 }
 
 .glass {
