@@ -4,7 +4,6 @@
       <div class="footer-content">
         <div class="footer-section">
           <div class="footer-brand">
-            <span class="brand-star">✨</span>
             <h4>Librería Gabi</h4>
           </div>
           <p class="footer-text">Acompañamos el crecimiento de tus pequeños con historias mágicas y aventuras inolvidables para soñar despiertos.</p>
@@ -13,9 +12,9 @@
         <div class="footer-section">
           <h4>Contacto</h4>
           <ul class="footer-links">
-            <li><span class="icon">📍</span> Yantzaza, Ecuador</li>
-            <li><span class="icon">📧</span> info@libreria-gabi.com</li>
-            <li><span class="icon">📞</span> +593 999 999 999</li>
+            <li>Yantzaza, Ecuador</li>
+            <li>info@libreria-gabi.com</li>
+            <li>+593 999 999 999</li>
           </ul>
         </div>
 

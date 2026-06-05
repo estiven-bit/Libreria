@@ -20,7 +20,6 @@
 
       <div class="about-grid">
         <div class="about-card glass">
-          <div class="icon">🎯</div>
           <h3>Misión</h3>
           <p>
             Fomentar el amor por la lectura en cada hogar ecuatoriano, ofreciendo una curaduría 
@@ -29,7 +28,6 @@
         </div>
 
         <div class="about-card glass">
-          <div class="icon">👁️</div>
           <h3>Visión</h3>
           <p>
             Ser la librería digital referente en el Ecuador, reconocida por nuestra calidez humana y 
@@ -38,7 +36,6 @@
         </div>
 
         <div class="about-card glass">
-          <div class="icon">🤝</div>
           <h3>Valores</h3>
           <p>
             Nos mueve la pasión por la cultura, la honestidad y el compromiso con nuestra gran familia lectora.
@@ -47,12 +44,12 @@
       </div>
 
       <div class="contact-card glass">
-        <h3>📍 Ubicación & Contacto</h3>
+        <h3>Ubicación & Contacto</h3>
         <div class="contact-info">
           <p>Estamos en <strong>Yantzaza, Ecuador</strong>.</p>
           <div class="details">
-            <span>📧 info@libreria-gabi.ec</span>
-            <span>📞 +593 99 000 0000</span>
+            <span>info@libreria-gabi.ec</span>
+            <span>+593 99 000 0000</span>
           </div>
         </div>
       </div>
