@@ -146,18 +146,29 @@ class AuthController
         
         $mail->setFrom($fromEmail, $fromName);
         $mail->addAddress($email, $name);
-        $mail->addEmbeddedImage($logoPath, 'logo_img');
+        
+        // Evitamos que PHPMailer falle si el logo no existe en Vercel (el backend se sube sin frontend)
+        $logoSrc = 'https://libreria-taupe.vercel.app/logo.png';
+        if (file_exists($logoPath)) {
+            try {
+                $mail->addEmbeddedImage($logoPath, 'logo_img');
+                $logoSrc = 'cid:logo_img';
+            } catch (\Throwable $logoErr) {
+                // Fallback silencioso si falla
+            }
+        }
+        
         $mail->isHTML(true);
         $mail->Subject = 'Activa tu cuenta - Librería Gabi';
         $frontendUrl = rtrim($this->config['frontend_url'] ?? 'http://localhost:5173', '/');
         $url = "{$frontendUrl}/activate?token=$token";
         $mail->Body = "
             <div style='background-color: #f4f7f6; padding: 40px 10px; font-family: Arial, sans-serif;'>
-                <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);'>
-                    
-                    <div style='background-color: #1a233d; padding: 20px; text-align: center;'>
-                        <img src='cid:logo_img' alt='Librería Gabi' style='height: 80px; width: auto; display: block; margin: 0 auto;'>
-                    </div>
+                 <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);'>
+                     
+                     <div style='background-color: #1a233d; padding: 20px; text-align: center;'>
+                         <img src='" . $logoSrc . "' alt='Librería Gabi' style='height: 80px; width: auto; display: block; margin: 0 auto;'>
+                     </div>
 
                     <div style='padding: 30px; text-align: center;'>
                         <h1 style='color: #1a233d; font-size: 24px; margin-top: 0;'>¡Hola, " . htmlspecialchars($name) . "!</h1>
