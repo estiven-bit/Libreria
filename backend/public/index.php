@@ -53,12 +53,15 @@ $routes = require __DIR__ . '/../routes/api.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 // --- CORRECCIÓN DE RUTA ---
-$uri = $_SERVER['PATH_INFO'] ?? '';
+// Usamos REQUEST_URI en lugar de PATH_INFO para tener el mismo comportamiento en local y Vercel
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 
-if (empty($uri) || $uri === '/') {
-    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-    $uri = str_replace('/libreria_gabi/backend/public/index.php', '', $uri);
-}
+// Eliminamos prefijos del subdirectorio local o de la redirección de Vercel
+$uri = str_replace([
+    '/libreria_gabi/backend/public/index.php',
+    '/libreria_gabi/backend/public',
+    '/api/index.php'
+], '', $uri);
 
 // Aseguramos que empiece con barra para que coincida con api.php (ej: /categories)
 $uri = '/' . ltrim($uri, '/'); 
