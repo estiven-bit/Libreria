@@ -28,11 +28,12 @@ require_once __DIR__ . '/../services/UploadService.php';
 require_once __DIR__ . '/../models/Log.php';
 
 $config = require __DIR__ . '/../config/config.php';
-$db = require __DIR__ . '/../config/database.php';
 
-// CORS y rate limiting
+// CORS y rate limiting primero (fundamental para enviar cabeceras antes de cualquier error de base de datos)
 CorsMiddleware::handle($config['app']);
 RateLimitMiddleware::handle($config['app']);
+
+$db = require __DIR__ . '/../config/database.php';
 
 $logger = new Logger($config['app']['logs_path']);
 $logger->info('request', ['method' => $_SERVER['REQUEST_METHOD'], 'uri' => $_SERVER['REQUEST_URI']]);
