@@ -75,10 +75,12 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useCartStore } from '../stores/cart'
+import { useToastStore } from '../stores/toast'
 
 const store = inject('store')
 const cart = useCartStore()
 const router = useRouter()
+const toast = useToastStore()
 
 const paymentMethod = ref('card_online')
 const coupon = ref('')
@@ -108,10 +110,18 @@ const loadAddresses = async () => {
 }
 
 const createAddress = async () => {
-  const res = await api.post('/api/user/addresses', addressForm.value)
-  await loadAddresses()
-  if (res?.id) selectedAddressId.value = res.id
-  addressForm.value = { country: '', city: '', postal_code: '', address_line: '' }
+  if (!addressForm.value.address_line || !addressForm.value.city) {
+    return toast.error('Completa los campos obligatorios: dirección y ciudad')
+  }
+  try {
+    const res = await api.post('/api/user/addresses', addressForm.value)
+    await loadAddresses()
+    if (res?.id) selectedAddressId.value = res.id
+    addressForm.value = { country: '', city: '', postal_code: '', address_line: '' }
+    toast.success('Dirección guardada correctamente')
+  } catch (err) {
+    toast.error(err.message || 'Error al guardar la dirección')
+  }
 }
 
 const createOrder = async (method) => {
@@ -139,9 +149,9 @@ const placeCashOrder = async () => {
     const orderId = await createOrder('cash_on_delivery')
     cart.clear()
     await router.push('/mis-pedidos')
-    alert(`Pedido #${orderId} creado con exito`)
+    toast.success(`¡Pedido #${orderId} creado con éxito!`)
   } catch (err) {
-    alert(err.message || 'Error al procesar el pedido')
+    toast.error(err.message || 'Error al procesar el pedido')
   } finally {
     loading.value = false
   }
@@ -165,7 +175,7 @@ const payWithCard = async () => {
   } catch (err) {
     checkoutMessage.value = ''
     loading.value = false
-    alert(err.message || 'Error al procesar el pedido')
+    toast.error(err.message || 'Error al procesar el pedido')
   }
 }
 

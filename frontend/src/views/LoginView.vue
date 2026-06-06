@@ -66,9 +66,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 
 const auth = useAuthStore()
 const router = useRouter()
+const toast = useToastStore()
 
 const email = ref('')
 const password = ref('')
@@ -80,7 +82,7 @@ const handleLogin = async () => {
     await auth.login(email.value, password.value)
     router.push('/')
   } catch (error) {
-    alert(`Error al iniciar sesion: ${error.message}`)
+    toast.error(`Error al iniciar sesión: ${error.message}`)
   } finally {
     loading.value = false
   }
