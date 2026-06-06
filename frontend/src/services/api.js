@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app'
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app').replace(/\/$/, '')
 
 function isAuthFailureEndpoint(path) {
   const p = path.startsWith('/') ? path : `/${path}`
