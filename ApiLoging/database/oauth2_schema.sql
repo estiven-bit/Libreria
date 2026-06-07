@@ -6,7 +6,7 @@
 -- Tablas nuevas, no toca la `users` existente. El UserRepository de OIDC
 -- consulta `users` directamente para autenticar y emitir claims.
 
--- USE libreriagabi_users;
+USE defaultdb;
 
 -- Aplicaciones cliente registradas (Librería Gabi).
 CREATE TABLE IF NOT EXISTS oauth_clients (
