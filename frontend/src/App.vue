@@ -20,11 +20,14 @@ import NavBar from './components/NavBar.vue'
 import FooterBar from './components/FooterBar.vue'
 import ToastStack from './components/ToastStack.vue'
 import { useCartStore } from './stores/cart'
+import { useAuthStore } from './stores/auth'
 
 const store = inject('store')
 const cart = useCartStore()
 
 onMounted(async () => {
+  const auth = useAuthStore()
+  await auth.hydrate()
   if (store.user) {
     try {
       const res = await api.get('/api/cart')

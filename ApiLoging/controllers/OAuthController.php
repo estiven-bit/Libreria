@@ -1026,13 +1026,14 @@ JS;
         $db->beginTransaction();
         try {
             $insert = $db->prepare(
-                'INSERT INTO users (username, email, password, name, first_name, last_name, phone, role, is_email_verified, email_verified_at)
-                 VALUES (:u, :email, :pass, :name, :first, :last, :phone, "user", 1, NOW())'
+                'INSERT INTO users (username, email, password, password_hash, name, first_name, last_name, phone, role, is_email_verified, email_verified_at, created_at)
+                 VALUES (:u, :email, :pass, :pass_hash, :name, :first, :last, :phone, "user", 1, NOW(), NOW())'
             );
             $insert->execute([
                 ':u' => $pending['username'] ?: null,
                 ':email' => $pending['email'],
                 ':pass' => $pending['password_hash'],
+                ':pass_hash' => $pending['password_hash'],
                 ':name' => $pending['name'],
                 ':first' => $pending['first_name'],
                 ':last' => $pending['last_name'],

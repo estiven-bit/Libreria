@@ -7,37 +7,47 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
   const token = ref(null) // Las sesiones ahora son HttpOnly en el BFF
 
+  let hydrationPromise = null
+
   async function hydrate() {
-    try {
-      const res = await fetch(`${api.BFF_BASE}/bff/me`, {
-        method: 'GET',
-        credentials: 'include',
-      })
-      if (!res.ok) {
-        throw new Error('Error de comunicación con el BFF')
-      }
-      const data = await res.json()
-      if (data.authenticated && data.user) {
-        const claims = data.user
-        const normalizedUser = {
-          id: parseInt(claims.sub),
-          name: claims.name,
-          email: claims.email,
-          role: claims.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO',
-          is_active: 1,
+    if (hydrationPromise) return hydrationPromise
+
+    hydrationPromise = (async () => {
+      try {
+        const res = await fetch(`${api.BFF_BASE}/bff/me`, {
+          method: 'GET',
+          credentials: 'include',
+        })
+        if (!res.ok) {
+          throw new Error('Error de comunicación con el BFF')
         }
-        localStorage.setItem('user', JSON.stringify(normalizedUser))
-        user.value = normalizedUser
-        legacyStore.user = normalizedUser
-        return true
-      } else {
-        logout()
-        return false
+        const data = await res.json()
+        if (data.authenticated && data.user) {
+          const claims = data.user
+          const normalizedUser = {
+            id: parseInt(claims.sub),
+            name: claims.name,
+            email: claims.email,
+            role: claims.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO',
+            is_active: 1,
+          }
+          localStorage.setItem('user', JSON.stringify(normalizedUser))
+          user.value = normalizedUser
+          legacyStore.user = normalizedUser
+          return true
+        } else {
+          await logout()
+          return false
+        }
+      } catch (error) {
+        console.error('Error al hidratar sesión BFF:', error)
+        return !!user.value
+      } finally {
+        hydrationPromise = null
       }
-    } catch (error) {
-      console.error('Error al hidratar sesión BFF:', error)
-      return !!user.value
-    }
+    })()
+
+    return hydrationPromise
   }
 
   async function login(email, password) {
