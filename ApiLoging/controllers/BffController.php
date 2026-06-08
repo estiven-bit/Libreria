@@ -624,10 +624,43 @@ class BffController
         // Todo lo que llegue a endpoints de administración exige admin.
         $requiresAdmin = str_starts_with($path, 'admin-')
             || str_starts_with($path, 'admin/');
+        $user = null;
         if ($requiresAdmin) {
             $user = self::verifyAdminAuth();
         } else {
-            $user = self::verifyAuthenticated();
+            // Verificación opcional de autenticación para endpoints no-admin
+            self::startSession();
+            $session = self::activeAccount();
+            if ($session) {
+                if (time() >= ($session['expires_at'] ?? 0)) {
+                    $refreshed = self::tryRefreshSession((int)$_SESSION['oauth_active_user'], $session);
+                    if ($refreshed) {
+                        $session = $refreshed;
+                    } else {
+                        $session = null;
+                    }
+                }
+                if ($session) {
+                    try {
+                        $resourceServer = ServerFactory::resourceServer();
+                        $psr17 = new Psr17Factory();
+                        $req = $psr17->createServerRequest('GET', '/oauth/userinfo')
+                            ->withHeader('Authorization', 'Bearer ' . $session['access_token']);
+                        $req = $resourceServer->validateAuthenticatedRequest($req);
+                        $userId = (int)$req->getAttribute('oauth_user_id');
+                        $stmt = Database::connect()->prepare(
+                            'SELECT id, email, name, role FROM users WHERE id = :id LIMIT 1'
+                        );
+                        $stmt->execute([':id' => $userId]);
+                        $userRow = $stmt->fetch();
+                        if ($userRow) {
+                            $user = $userRow;
+                        }
+                    } catch (\Throwable $e) {
+                        $user = null;
+                    }
+                }
+            }
         }
 
         // Dos modos de mapeo path → URL del backend:
@@ -689,13 +722,11 @@ class BffController
         // IPv6 (logs más legibles).
         $clientIp = Security::getClientIp();
 
-        // Valores que se inyectan en las cabeceras X-LibreriaGabi-*. Los guardamos
-        // en variables locales porque A1 los necesita LITERALES para construir
-        // la cadena canónica firmada (los mismos bytes que viajan en el header).
-        $bffUser  = (string)(int)$user['id'];
-        $bffRole  = (string)($user['role'] ?? 'user');
-        $bffEmail = (string)($user['email'] ?? '');
-        $bffName  = (string)($user['name'] ?? '');
+        // Valores que se inyectan en las cabeceras X-LibreriaGabi-* si hay usuario logueado.
+        $bffUser  = $user ? (string)(int)$user['id'] : '';
+        $bffRole  = $user ? (string)($user['role'] ?? 'user') : '';
+        $bffEmail = $user ? (string)($user['email'] ?? '') : '';
+        $bffName  = $user ? (string)($user['name'] ?? '') : '';
 
         $body = null;
         if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
@@ -741,22 +772,25 @@ class BffController
         //   - JSON/urlencoded: $body es el string raw que recibió el BFF.
         //   - multipart: el backend verá php://input VACÍO (PHP no lo expone en
         //     multipart), así que hasheamos '' aquí también para que coincida.
-        $timestamp     = time();
-        $bodyForHash   = $isMultipart ? '' : (string)$body;
-        $bodyHash      = hash('sha256', $bodyForHash);
-        $canonical     = $timestamp . "\n" . $bffUser . "\n" . $bffRole . "\n" . $bffEmail . "\n" . $bodyHash;
-        $signature     = hash_hmac('sha256', $canonical, $serviceSecret);
-
         $headers = [
-            'X-LibreriaGabi-User: ' . $bffUser,
-            'X-LibreriaGabi-Role: ' . $bffRole,
-            'X-LibreriaGabi-Email: ' . $bffEmail,
-            'X-LibreriaGabi-Name: ' . $bffName,
             'X-LibreriaGabi-Client-IP: ' . $clientIp,
             'X-LibreriaGabi-Service-Secret: ' . $serviceSecret,
-            'X-LibreriaGabi-Timestamp: ' . $timestamp,
-            'X-LibreriaGabi-Signature: ' . $signature,
         ];
+
+        if ($user) {
+            $timestamp     = time();
+            $bodyForHash   = $isMultipart ? '' : (string)$body;
+            $bodyHash      = hash('sha256', $bodyForHash);
+            $canonical     = $timestamp . "\n" . $bffUser . "\n" . $bffRole . "\n" . $bffEmail . "\n" . $bodyHash;
+            $signature     = hash_hmac('sha256', $canonical, $serviceSecret);
+
+            $headers[] = 'X-LibreriaGabi-User: ' . $bffUser;
+            $headers[] = 'X-LibreriaGabi-Role: ' . $bffRole;
+            $headers[] = 'X-LibreriaGabi-Email: ' . $bffEmail;
+            $headers[] = 'X-LibreriaGabi-Name: ' . $bffName;
+            $headers[] = 'X-LibreriaGabi-Timestamp: ' . $timestamp;
+            $headers[] = 'X-LibreriaGabi-Signature: ' . $signature;
+        }
         // Para JSON / urlencoded conservamos el Content-Type original. Para
         // multipart NO lo añadimos: curl genera su propio Content-Type con un
         // boundary distinto al original al construir el form-data desde el
