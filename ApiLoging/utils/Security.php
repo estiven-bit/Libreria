@@ -59,7 +59,7 @@ class Security
 
     public static function enforceProductionTransport(): void
     {
-        $appEnv = strtolower((string) (getenv('APP_ENV') ?: 'local'));
+        $appEnv = strtolower((string) (env('APP_ENV') ?: 'local'));
         if (!in_array($appEnv, ['production', 'prod'], true)) {
             return;
         }
@@ -71,8 +71,8 @@ class Security
 
     public static function ensureStrongJwtSecret(): void
     {
-        $secret = (string) (getenv('JWT_SECRET') ?: '');
-        $appEnv = strtolower((string) (getenv('APP_ENV') ?: 'local'));
+        $secret = (string) (env('JWT_SECRET') ?: '');
+        $appEnv = strtolower((string) (env('APP_ENV') ?: 'local'));
 
         $isWeak = $secret === '' || strlen($secret) < 32 || $secret === 'change-this-secret';
         if (!$isWeak) {
@@ -147,7 +147,7 @@ class Security
             && self::isAllowedAbsoluteUrl($origin, 'REDIRECT_ALLOWED_ORIGINS')) {
             return self::joinOriginAndPath($origin, $fixedPath);
         }
-        return (string) (getenv($envFallbackKey) ?: '');
+        return (string) (env($envFallbackKey) ?: '');
     }
 
     /**
@@ -163,7 +163,7 @@ class Security
             && self::isAllowedAbsoluteUrl($candidate, 'REDIRECT_ALLOWED_ORIGINS')) {
             return self::joinOriginAndPath($candidate, $fixedPath);
         }
-        return (string) (getenv($envFallbackKey) ?: '');
+        return (string) (env($envFallbackKey) ?: '');
     }
 
     /**
@@ -206,7 +206,7 @@ class Security
             return false;
         }
 
-        $allowed = self::parseCsv(getenv($envKey) ?: '');
+        $allowed = self::parseCsv(env($envKey) ?: '');
         if ($allowed === []) {
             return true;
         }
@@ -217,7 +217,7 @@ class Security
 
     private static function allowedOrigins(): array
     {
-        $configured = self::parseCsv(getenv('CORS_ALLOWED_ORIGINS') ?: '');
+        $configured = self::parseCsv(env('CORS_ALLOWED_ORIGINS') ?: '');
 
         // Allowlist mínima HARDCODED de prod: si el FTP de Hostinger
         // sobrescribe el .env (bug documentado en feedback_deploy_env_restore.md),

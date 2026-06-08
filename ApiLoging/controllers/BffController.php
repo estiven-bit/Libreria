@@ -666,7 +666,7 @@ class BffController
             $targetUrl .= '?' . $_SERVER['QUERY_STRING'];
         }
 
-        $serviceSecret = getenv('BFF_SERVICE_SECRET');
+        $serviceSecret = env('BFF_SERVICE_SECRET');
         if (!$serviceSecret) {
             $envFile = __DIR__ . '/../.env';
             if (is_file($envFile)) {
@@ -808,7 +808,7 @@ class BffController
     private static function backendUrlFor(string $app): ?string
     {
         $envKey = strtoupper($app) . '_BACKEND_URL';
-        $url = getenv($envKey);
+        $url = env($envKey);
         if (!$url) {
             $envFile = __DIR__ . '/../.env';
             if (is_file($envFile)) {

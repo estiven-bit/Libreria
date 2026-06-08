@@ -28,7 +28,7 @@ class ServerFactory
 
     public static function issuer(): string
     {
-        return getenv('OIDC_ISSUER') ?: 'http://localhost:8000';
+        return env('OIDC_ISSUER') ?: 'http://localhost:8000';
     }
 
     public static function privateKeyPath(): string

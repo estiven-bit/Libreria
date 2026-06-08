@@ -48,7 +48,7 @@ class NotionService
             return false;
         }
 
-        $databaseId = trim((string) getenv('NOTION_DATABASE_ID'));
+        $databaseId = trim((string) env('NOTION_DATABASE_ID'));
         $payload = [
             'parent' => ['database_id' => $databaseId],
             'properties' => $properties,
@@ -87,7 +87,7 @@ class NotionService
             return false;
         }
 
-        $databaseId = trim((string) getenv('NOTION_DATABASE_ID'));
+        $databaseId = trim((string) env('NOTION_DATABASE_ID'));
         $queryPayload = [
             'filter' => [
                 'property' => $emailProperty,
@@ -137,7 +137,7 @@ class NotionService
             return 'Notion no está habilitado (NOTION_ENABLED)';
         }
 
-        $databaseId = trim((string) getenv('NOTION_DATABASE_ID'));
+        $databaseId = trim((string) env('NOTION_DATABASE_ID'));
         if ($databaseId === '') {
             return 'NOTION_DATABASE_ID no configurado';
         }
@@ -368,7 +368,7 @@ class NotionService
 
     private static function getDatabaseSchema(): ?array
     {
-        $databaseId = trim((string) getenv('NOTION_DATABASE_ID'));
+        $databaseId = trim((string) env('NOTION_DATABASE_ID'));
         if ($databaseId === '') {
             return null;
         }
@@ -388,7 +388,7 @@ class NotionService
             return null;
         }
 
-        $apiKey = trim((string) getenv('NOTION_API_KEY'));
+        $apiKey = trim((string) env('NOTION_API_KEY'));
         if ($apiKey === '') {
             return null;
         }
@@ -446,12 +446,12 @@ class NotionService
 
     private static function isEnabled(): bool
     {
-        $enabled = strtolower(trim((string) getenv('NOTION_ENABLED')));
+        $enabled = strtolower(trim((string) env('NOTION_ENABLED')));
         if (!in_array($enabled, ['1', 'true', 'yes', 'on'], true)) {
             return false;
         }
 
-        return trim((string) getenv('NOTION_API_KEY')) !== '' && trim((string) getenv('NOTION_DATABASE_ID')) !== '';
+        return trim((string) env('NOTION_API_KEY')) !== '' && trim((string) env('NOTION_DATABASE_ID')) !== '';
     }
 
     private static function log(string $message): void

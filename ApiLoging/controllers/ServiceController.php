@@ -55,7 +55,7 @@ class ServiceController
 
     private static function serviceSecret(): string
     {
-        $value = getenv('SERVICE_JWT_SECRET') ?: '';
+        $value = env('SERVICE_JWT_SECRET') ?: '';
         if ($value !== '') return $value;
 
         $envFile = __DIR__ . '/../.env';

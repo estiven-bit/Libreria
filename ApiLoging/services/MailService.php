@@ -18,9 +18,9 @@ class MailService
 {
     public static function isConfigured(): bool
     {
-        return trim((string)(getenv('MAIL_HOST') ?: '')) !== ''
-            && trim((string)(getenv('MAIL_USERNAME') ?: '')) !== ''
-            && trim((string)(getenv('MAIL_PASSWORD') ?: '')) !== '';
+        return trim((string)(env('MAIL_HOST') ?: '')) !== ''
+            && trim((string)(env('MAIL_USERNAME') ?: '')) !== ''
+            && trim((string)(env('MAIL_PASSWORD') ?: '')) !== '';
     }
 
     /**
@@ -37,13 +37,13 @@ class MailService
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
-            $mail->Host = (string)getenv('MAIL_HOST');
-            $mail->Port = (int)(getenv('MAIL_PORT') ?: 465);
+            $mail->Host = (string)env('MAIL_HOST');
+            $mail->Port = (int)(env('MAIL_PORT') ?: 465);
             $mail->SMTPAuth = true;
-            $mail->Username = (string)getenv('MAIL_USERNAME');
-            $mail->Password = (string)getenv('MAIL_PASSWORD');
+            $mail->Username = (string)env('MAIL_USERNAME');
+            $mail->Password = (string)env('MAIL_PASSWORD');
 
-            $encryption = strtolower((string)(getenv('MAIL_ENCRYPTION') ?: 'ssl'));
+            $encryption = strtolower((string)(env('MAIL_ENCRYPTION') ?: 'ssl'));
             if ($encryption === 'tls') {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             } else {
@@ -51,8 +51,8 @@ class MailService
             }
             $mail->CharSet = 'UTF-8';
 
-            $fromEmail = (string)(getenv('MAIL_FROM') ?: getenv('MAIL_USERNAME'));
-            $fromName = (string)(getenv('MAIL_FROM_NAME') ?: 'Librería Gabi');
+            $fromEmail = (string)(env('MAIL_FROM') ?: env('MAIL_USERNAME'));
+            $fromName = (string)(env('MAIL_FROM_NAME') ?: 'Librería Gabi');
             $mail->setFrom($fromEmail, $fromName);
             $mail->addAddress($toEmail);
 

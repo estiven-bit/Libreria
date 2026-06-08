@@ -10,11 +10,11 @@ class Database
             return $pdo;
         }
 
-        $host = getenv('DB_HOST') ?: '127.0.0.1';
-        $port = getenv('DB_PORT') ?: '3306';
-        $name = getenv('DB_NAME') ?: 'auth_server';
-        $user = getenv('DB_USER') ?: 'root';
-        $pass = getenv('DB_PASS') ?: '';
+        $host = env('DB_HOST') ?: '127.0.0.1';
+        $port = env('DB_PORT') ?: '3306';
+        $name = env('DB_NAME') ?: 'auth_server';
+        $user = env('DB_USER') ?: 'root';
+        $pass = env('DB_PASS') ?: '';
 
         $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
 

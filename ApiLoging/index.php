@@ -14,6 +14,16 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
+if (!function_exists('env')) {
+    function env(string $key, string $default = ''): string {
+        $v = getenv($key);
+        if ($v !== false && $v !== '') return $v;
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
+        return $default;
+    }
+}
+
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config/Env.php';
 require_once __DIR__ . '/config/Database.php';
