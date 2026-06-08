@@ -10,7 +10,7 @@
 
 // En el built-in server de PHP (php -S) las notices se imprimen ANTES del
 // body JSON y rompen las respuestas. Las seguimos logueando, solo no se imprimen.
-ini_set('display_errors', '0');
+ini_set('display_errors', '1');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
