@@ -19,6 +19,7 @@ import AdminCouponsView from '../views/admin/AdminCouponsView.vue'
 import AdminLogsView from '../views/admin/AdminLogsView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import ActivateView from '../views/Activate.vue'
+import CallbackView from '../views/CallbackView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { title: 'Inicio', description: 'Libros infantiles para todas las edades.' } },
@@ -41,6 +42,7 @@ const routes = [
   { path: '/admin/cupones', name: 'admin-coupons', component: AdminCouponsView },
   { path: '/admin/logs', name: 'admin-logs', component: AdminLogsView },
   { path: '/activate', name: 'activate', component: ActivateView, meta: { title: 'Activar Cuenta', description: 'Verificacion de tu cuenta en Libreria Gabi.' } },
+  { path: '/oidc-callback', name: 'oidc-callback', component: CallbackView, meta: { title: 'Verificando sesión', description: 'Procesando login centralizado…' } },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'No encontrado', description: 'La pagina solicitada no existe.' } },
 ]
 

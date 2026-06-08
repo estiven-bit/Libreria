@@ -48,6 +48,7 @@ return [
         'frontend_url'       => env('FRONTEND_URL', 'http://localhost:5173'),
         'jwt_secret'         => env('JWT_SECRET', 'change_this_secret'),
         'jwt_issuer'         => env('JWT_ISSUER', 'pagina-web-gabi'),
+        'bff_service_secret' => env('BFF_SERVICE_SECRET', '24703063d1516c84623d5e2013e758c51a8f8a815f40e0fc588f9d744c887dab'),
         'jwt_exp_minutes'    => 60,
         'rate_limit_per_minute' => 60,
         'uploads_path'       => __DIR__ . '/../storage/uploads',

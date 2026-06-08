@@ -1,270 +1,72 @@
 <template>
-  <section class="auth-container">
-    <div class="video-background">
-      <video autoplay muted loop playsinline id="video-fondo">
-        <source src="../assets/video-fondo-registrar.mp4" type="video/mp4">
-        Tu navegador no soporta el video.
-      </video>
-      <div class="video-overlay"></div>
+  <div class="register-redirect-container">
+    <div class="loader-card">
+      <div class="spinner"></div>
+      <h2>Redirigiendo al Registro centralizado…</h2>
+      <p>Estamos conectando con el portal de registro de la librería.</p>
     </div>
-
-    <div class="form-card">
-      <div class="form-header">
-        <span class="form-icon">✨</span>
-        <h2>Crear cuenta</h2>
-        <p>Únete a nuestra comunidad de lectores</p>
-      </div>
-
-      <div class="form-body">
-        <div class="input-group">
-          <label>Nombre completo</label>
-          <input v-model="name" class="input" placeholder="Ej. Gabriel García" />
-        </div>
-
-        <div class="input-group">
-          <label>Correo electrónico</label>
-          <input v-model="email" class="input" type="email" placeholder="tu@email.com" />
-        </div>
-
-        <div class="input-group">
-          <label>Teléfono Celular</label>
-          <input v-model="phone" class="input" type="tel" placeholder="Ej. 0990000000" />
-        </div>
-
-        <div class="input-group">
-          <label>Contraseña</label>
-          <input v-model="password" class="input" type="password" placeholder="Mín. 8 carac, Mayús y Núm" />
-        </div>
-
-        <div class="input-group">
-          <label>Confirmar contraseña</label>
-          <input v-model="confirmPassword" class="input" type="password" placeholder="••••••••" />
-        </div>
-
-        <button class="btn-submit" @click="handleRegister">
-          <span>Registrarme</span>
-        </button>
-
-        <div class="messages">
-          <p v-if="message" class="success">✅ {{ message }}</p>
-          <p v-if="error" class="error">⚠️ {{ error }}</p>
-        </div>
-      </div>
-
-      <div class="form-footer">
-        <p>¿Ya tienes cuenta? <RouterLink to="/login">Inicia sesión aquí</RouterLink></p>
-      </div>
-    </div>
-  </section>
+  </div>
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
-import { useRouter } from 'vue-router'
-import { register } from '../services/auth'
+import { onMounted } from 'vue'
+import { api } from '../services/api'
+import { useToastStore } from '../stores/toast'
 
-// Inicialización de herramientas
-const store = inject('store')
-const router = useRouter()
+const toast = useToastStore()
 
-// Estados del formulario
-const name = ref('')
-const email = ref('')
-const phone = ref('') 
-const password = ref('')
-const confirmPassword = ref('')
-const message = ref('')
-const error = ref('')
-
-const handleRegister = async () => {
-  // Limpiar mensajes previos
-  error.value = ''
-  message.value = ''
-
-  // 1. Validaciones de front-end
-  if (!name.value || !email.value || !phone.value || !password.value) {
-    error.value = 'Todos los campos son obligatorios';
-    return;
-  }
-
-  if (!email.value.includes('@')) { 
-    error.value = 'Email inválido'; 
-    return 
-  }
-
-  if (phone.value.length < 10) {
-    error.value = 'El teléfono debe tener al menos 10 dígitos';
-    return
-  }
-
-  const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
-  if (!passwordRegex.test(password.value)) {
-    error.value = 'La contraseña requiere: 8 caracteres, una mayúscula y un número';
-    return
-  }
-
-  if (password.value !== confirmPassword.value) { 
-    error.value = 'Las contraseñas no coinciden'; 
-    return 
-  }
-
+onMounted(() => {
   try {
-    // 2. Llamada a la API
-    const res = await register({
-      name: name.value,
-      email: email.value,
-      phone: phone.value,
-      password: password.value,
-      confirm_password: confirmPassword.value,
-    })
-    
-    // 3. Manejo de respuesta exitosa
-    if (res && res.success) {      
-      
-      // Guardamos el CSRF si viene, pero NO llamamos a store.setAuth
-      if(res.csrf_token) {
-        localStorage.setItem('csrf_token', res.csrf_token);
-      }
-      
-      // Mensaje informativo claro
-      message.value = '¡Registro exitoso! Por favor, revisa tu correo para activar tu cuenta antes de iniciar sesión.';
-      
-      // IMPORTANTE: No ejecutamos store.setAuth(res.user, res.token) aquí.
-      // Al no ejecutarlo, el 'store.user' sigue siendo null y el Header no cambia.
-
-      // Redirección con un pequeño retraso
-      setTimeout(() => {
-        // Redirigimos a la home, pero como no hay user en el store, 
-        // el Header mostrará correctamente "Login / Registro"
-        router.push('/');
-      }, 4000); // 4 segundos para que le de tiempo a leer que debe revisar el email
-      
-    } else {
-      error.value = res.error || res.message || 'No se pudo completar el registro.';
-    }
-
-  } catch (err) { 
-    console.error("Detalle técnico del error:", err);
-    if (err.message && err.message !== "Failed to fetch") {
-        error.value = err.message;
-    } else {
-        error.value = 'No hay conexión con el servidor. Verifica que el backend esté encendido.';
-    }
+    // Redirigir al registro del IdP con retorno al origin de la app
+    const returnUrl = encodeURIComponent(window.location.origin + '/')
+    const registerUrl = `${api.BFF_BASE}/idp/register?return=${returnUrl}`
+    window.location.assign(registerUrl)
+  } catch (error) {
+    console.error('Error al redirigir al registro centralizado:', error)
+    toast.error(`Error al redirigir al registro: ${error.message}`)
   }
-}
+})
 </script>
 
 <style scoped>
-/* --- TUS ESTILOS MANTENIDOS INTACTOS --- */
-.video-background {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100vh;
-  z-index: -2;
-  overflow: hidden;
-}
-
-#video-fondo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.video-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.4);
-  z-index: -1;
-}
-
-.auth-container {
+.register-redirect-container {
   min-height: calc(100vh - 88px);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end; 
-  padding: 40px 10% 40px 0;
-  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at top, #fff1c2, #fff9e6);
+  padding: 1.5rem;
 }
-
-.form-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.loader-card {
+  background: white;
   border-radius: 20px;
-  padding: 20px 25px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-  animation: slideIn 0.8s ease-out;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.form-header { text-align: center; margin-bottom: 12px; }
-.form-icon { font-size: 1.8rem; margin-bottom: 4px; display: block; }
-.form-header h2 { color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0; }
-.form-header p { color: #cbd5e1; font-size: 0.8rem; margin-top: 2px; }
-
-.form-body { display: flex; flex-direction: column; gap: 8px; }
-.input-group { display: flex; flex-direction: column; gap: 2px; }
-.input-group label { color: #94a3b8; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-
-.input {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: #f1f5f9;
-  font-size: 0.9rem;
-  transition: 0.3s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: #38bdf8;
-  background: rgba(15, 23, 42, 0.9);
-}
-
-.btn-submit {
-  margin-top: 10px;
-  background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
-  color: white;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  font-weight: 700;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-submit:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-  box-shadow: 0 10px 15px rgba(255, 107, 107, 0.3);
-}
-
-.messages { margin-top: 10px; text-align: center; font-size: 0.85rem; }
-.success { color: #4ade80; }
-.error { color: #f87171; }
-
-.form-footer {
-  margin-top: 12px;
+  padding: 3rem 2rem;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 10px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  max-width: 400px;
+  width: 100%;
 }
-.form-footer p { color: #f1f5f9; font-size: 0.85rem; }
-.form-footer a { color: #38bdf8; text-decoration: none; font-weight: 600; }
-
-@media (max-width: 992px) {
-  .auth-container {
-    justify-content: center;
-    padding: 30px 20px;
-  }
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ff9f43;
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  animation: spin 1s linear infinite;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1a233d;
+  margin: 0 0 0.5rem;
+}
+p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

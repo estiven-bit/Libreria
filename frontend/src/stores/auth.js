@@ -1,30 +1,61 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { loginRequest } from '../services/auth'
 import { store as legacyStore } from '../store'
+import { api } from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
-  const token = ref(localStorage.getItem('token'))
+  const token = ref(null) // Las sesiones ahora son HttpOnly en el BFF
 
-  function hydrate() {
-    user.value = JSON.parse(localStorage.getItem('user') || 'null')
-    token.value = localStorage.getItem('token')
+  async function hydrate() {
+    try {
+      const res = await fetch(`${api.BFF_BASE}/bff/me`, {
+        method: 'GET',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        throw new Error('Error de comunicación con el BFF')
+      }
+      const data = await res.json()
+      if (data.authenticated && data.user) {
+        const claims = data.user
+        const normalizedUser = {
+          id: parseInt(claims.sub),
+          name: claims.name,
+          email: claims.email,
+          role: claims.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO',
+          is_active: 1,
+        }
+        localStorage.setItem('user', JSON.stringify(normalizedUser))
+        user.value = normalizedUser
+        legacyStore.user = normalizedUser
+        return true
+      } else {
+        logout()
+        return false
+      }
+    } catch (error) {
+      console.error('Error al hidratar sesión BFF:', error)
+      return !!user.value
+    }
   }
 
   async function login(email, password) {
-    const data = await loginRequest(email, password)
-    legacyStore.setAuth(data.user, data.token)
-    user.value = data.user
-    token.value = data.token
-    return data
+    throw new Error('Flujo de login por contraseña deshabilitado en favor de SSO.')
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await fetch(`${api.BFF_BASE}/bff/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (error) {
+      console.error('BFF logout falló:', error)
+    }
     legacyStore.logout()
-    localStorage.removeItem('csrf_token')
+    localStorage.removeItem('user')
     user.value = null
-    token.value = null
   }
 
   return { user, token, hydrate, login, logout }

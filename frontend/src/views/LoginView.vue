@@ -1,232 +1,87 @@
 <template>
-  <div>
-    <div class="login-page">
-      <div class="video-background">
-        <video autoplay muted loop playsinline class="video-bg">
-          <source src="../assets/video-fondo-login.mp4" type="video/mp4">
-          Tu navegador no soporta el video.
-        </video>
-        <div class="video-overlay"></div>
-      </div>
-
-      <div class="login-layout">
-        <div class="login-card">
-          <div class="login-header">
-            <h2>Hola de nuevo</h2>
-            <div class="accent-line"></div>
-            <p class="subtitle">Entra para seguir explorando cuentos magicos</p>
-          </div>
-
-          <form @submit.prevent="handleLogin" class="login-form">
-            <div class="form-group">
-              <label>Correo electronico</label>
-              <div class="input-wrapper">
-                <input
-                  v-model="email"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Contrasena</label>
-              <div class="input-wrapper">
-                <input
-                  v-model="password"
-                  type="password"
-                  placeholder="........"
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" class="btn-submit" :disabled="loading">
-              <span v-if="!loading">Iniciar Sesion</span>
-              <span v-else class="loader">Cargando...</span>
-            </button>
-          </form>
-
-          <div class="register-cta">
-            <p>Aun no tienes cuenta en la libreria?</p>
-            <RouterLink to="/registro" class="link-to-register">
-              Crea tu cuenta aqui y obten un 10% de descuento
-            </RouterLink>
-          </div>
-        </div>
-
-        <div class="spacer"></div>
-      </div>
+  <div class="login-redirect-container">
+    <div class="loader-card">
+      <div class="spinner"></div>
+      <h2>Redirigiendo a Librería Gabi Accounts…</h2>
+      <p>Estamos conectando con tu cuenta de identidad única.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { onMounted } from 'vue'
+import { api } from '../services/api'
 import { useToastStore } from '../stores/toast'
 
-const auth = useAuthStore()
-const router = useRouter()
 const toast = useToastStore()
 
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-
-const handleLogin = async () => {
-  loading.value = true
+onMounted(async () => {
   try {
-    await auth.login(email.value, password.value)
-    router.push('/')
+    // 1. Obtener la URL de autorización desde el BFF
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    const clientId = isLocal ? 'libreria-gabi-dev' : 'libreria-gabi-prod'
+    
+    const res = await fetch(`${api.BFF_BASE}/bff/start?client=${clientId}`, {
+      method: 'GET',
+    })
+    
+    if (!res.ok) {
+      throw new Error('Error al iniciar el flujo de sesión en el BFF')
+    }
+    
+    const data = await res.json()
+    if (data.authorize_url) {
+      // 2. Redirigir la página completa al IdP
+      window.location.assign(data.authorize_url)
+    } else {
+      throw new Error('No se recibió la URL de autorización del IdP')
+    }
   } catch (error) {
-    toast.error(`Error al iniciar sesión: ${error.message}`)
-  } finally {
-    loading.value = false
+    console.error('Error al redirigir al login centralizado:', error)
+    toast.error(`Error de login centralizado: ${error.message}`)
   }
-}
+})
 </script>
 
 <style scoped>
-.video-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  z-index: -1;
-  overflow: hidden;
-}
-.video-bg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.video-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.3);
-}
-.login-page {
+.login-redirect-container {
   min-height: calc(100vh - 88px);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-.login-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: calc(100vh - 88px);
-  padding: 40px 8%;
-  align-items: center;
+  place-items: center;
+  background: radial-gradient(circle at top, #fff1c2, #fff9e6);
+  padding: 1.5rem;
 }
-.login-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  padding: 30px 35px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+.loader-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  max-width: 400px;
   width: 100%;
-  max-width: 450px;
-  color: white;
-  justify-self: start;
 }
-.login-header h2 {
-  font-size: 2.2rem;
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ff6b6b;
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  animation: spin 1s linear infinite;
+}
+h2 {
+  font-size: 1.25rem;
   font-weight: 800;
+  color: #1a233d;
+  margin: 0 0 0.5rem;
+}
+p {
+  font-size: 0.9rem;
+  color: #64748b;
   margin: 0;
-  color: #ffffff;
 }
-.accent-line {
-  width: 60px;
-  height: 5px;
-  background: #ff9f43;
-  margin: 12px 0;
-  border-radius: 2px;
-}
-.subtitle {
-  color: #ffffff;
-  font-size: 1rem;
-  margin-bottom: 20px;
-  font-weight: 500;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-.login-form { text-align: left; }
-.form-group { margin-bottom: 16px; }
-label {
-  display: block;
-  font-weight: 800;
-  margin-bottom: 10px;
-  color: #ff9f43;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  font-size: 1rem;
-  color: #1e293b;
-  box-sizing: border-box;
-}
-input:focus {
-  outline: none;
-  border-color: #ff9f43;
-  background: #ffffff;
-}
-.btn-submit {
-  width: 100%;
-  background: linear-gradient(135deg, #ff9f43, #ff6b6b);
-  color: white;
-  padding: 14px;
-  border: none;
-  border-radius: 50px;
-  font-weight: 800;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  box-shadow: 0 10px 20px rgba(255, 107, 107, 0.4);
-}
-.btn-submit:hover:not(:disabled) {
-  transform: scale(1.02);
-  filter: brightness(1.1);
-}
-.register-cta {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-.register-cta p { color: #ffffff; font-weight: 500; }
-.link-to-register {
-  color: #ff9f43;
-  font-weight: 800;
-  text-decoration: none;
-  display: inline-block;
-  margin-top: 10px;
-  background: rgba(255, 159, 67, 0.1);
-  padding: 5px 12px;
-  border-radius: 8px;
-}
-@media (max-width: 900px) {
-  .login-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding: 0 20px;
-  }
-  .login-card {
-    justify-self: center;
-    padding: 35px 25px;
-  }
-  .spacer { display: none; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

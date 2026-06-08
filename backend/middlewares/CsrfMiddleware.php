@@ -51,6 +51,10 @@ class CsrfMiddleware
      */
     public static function verify(?array $jwtPayload = null): bool
     {
+        if ($jwtPayload !== null && isset($jwtPayload['csrf']) && $jwtPayload['csrf'] === 'bff_bypass') {
+            return true;
+        }
+
         $token = self::headerToken();
         if ($token === '') {
             return false;

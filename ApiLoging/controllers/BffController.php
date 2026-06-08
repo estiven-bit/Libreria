@@ -641,7 +641,7 @@ class BffController
         //   (b) Convención "kebab → snake": el path es un slug plano
         //       (ej. "admin-list"). Lo convertimos a "admin_list.php".
         //       Caso típico: Energy / Ingeniería con endpoints flat.
-        $isPassthrough = str_contains($path, '/') || str_ends_with($path, '.php');
+        $isPassthrough = str_contains($path, '/') || str_ends_with($path, '.php') || $app === 'libreriagabi';
         if ($isPassthrough) {
             // Sanitiza cada segmento para bloquear ".." y caracteres raros,
             // pero conserva la jerarquía con '/'.
@@ -652,8 +652,10 @@ class BffController
             }
             $cleanPath = implode('/', $segments);
             if ($cleanPath === '') Response::json(['error' => 'invalid_path'], 400);
-            // Garantizamos extensión .php (si el cliente la omitió).
-            if (!str_ends_with($cleanPath, '.php')) $cleanPath .= '.php';
+            // Garantizamos extensión .php (si el cliente la omitió), excepto para Librería Gabi
+            if ($app !== 'libreriagabi' && !str_ends_with($cleanPath, '.php')) {
+                $cleanPath .= '.php';
+            }
             $targetUrl = rtrim($backendUrl, '/') . '/' . $cleanPath;
         } else {
             $base = preg_replace('/[^a-z0-9_]/i', '', str_replace(['-', '/'], '_', $path));

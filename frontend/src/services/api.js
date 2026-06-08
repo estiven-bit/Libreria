@@ -1,4 +1,5 @@
 const API_BASE = (import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app').replace(/\/$/, '')
+const BFF_BASE = API_BASE.includes('/bff/') ? API_BASE.split('/bff/')[0] : API_BASE
 
 function isAuthFailureEndpoint(path) {
   const p = path.startsWith('/') ? path : `/${path}`
@@ -211,4 +212,5 @@ export const api = {
     request(path, { method: 'DELETE', body: data !== undefined ? JSON.stringify(data) : undefined }),
   postMultipart,
   fetchCsrfFromServer,
+  BFF_BASE,
 }
