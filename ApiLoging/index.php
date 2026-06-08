@@ -8,9 +8,7 @@
  * con un BFF dedicado que envuelve los tokens en una sesión HttpOnly.
  */
 
-// En el built-in server de PHP (php -S) las notices se imprimen ANTES del
-// body JSON y rompen las respuestas. Las seguimos logueando, solo no se imprimen.
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
@@ -22,34 +20,6 @@ if (!function_exists('env')) {
         if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
         return $default;
     }
-}
-
-if (isset($_GET['test_db'])) {
-    header('Content-Type: text/plain');
-    try {
-        echo "Testing DB Connection...\n";
-        echo "DB_HOST: " . env('DB_HOST') . "\n";
-        echo "DB_PORT: " . env('DB_PORT') . "\n";
-        echo "DB_NAME: " . env('DB_NAME') . "\n";
-        echo "DB_USER: " . env('DB_USER') . "\n";
-        echo "DB_PASS length: " . strlen(env('DB_PASS')) . "\n";
-        
-        $host = env('DB_HOST') ?: '127.0.0.1';
-        $port = env('DB_PORT') ?: '3306';
-        $name = env('DB_NAME') ?: 'auth_server';
-        $user = env('DB_USER') ?: 'root';
-        $pass = env('DB_PASS') ?: '';
-        
-        $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
-        $pdo = new PDO($dsn, $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT => 5,
-        ]);
-        echo "Connection SUCCESS!\n";
-    } catch (\Throwable $e) {
-        echo "Connection FAILED: " . $e->getMessage() . "\n";
-    }
-    exit;
 }
 
 require_once __DIR__ . '/vendor/autoload.php';

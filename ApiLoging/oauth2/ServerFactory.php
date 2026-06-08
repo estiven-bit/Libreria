@@ -53,7 +53,7 @@ class ServerFactory
             new ClientRepository(),
             new AccessTokenRepository(),
             new ScopeRepository(),
-            self::privateKeyPath(),
+            new \League\OAuth2\Server\CryptKey(self::privateKeyPath(), null, false),
             self::encryptionKey(),
             new OidcBearerTokenResponse(self::issuer(), self::privateKeyPath())
         );
@@ -79,7 +79,7 @@ class ServerFactory
     {
         return new ResourceServer(
             new AccessTokenRepository(),
-            self::publicKeyPath()
+            new \League\OAuth2\Server\CryptKey(self::publicKeyPath(), null, false)
         );
     }
 }
