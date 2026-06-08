@@ -497,7 +497,7 @@ class OAuthController
         self::$cspNonce = bin2hex(random_bytes(16));
         $nonce = self::$cspNonce;
         header('Content-Type: text/html; charset=utf-8');
-        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{$nonce}'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'", true);
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{$nonce}'; img-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'none'", true);
         header('Referrer-Policy: same-origin', true);
     }
 
@@ -639,6 +639,20 @@ class OAuthController
     font-size: 0.72rem;
     color: var(--muted);
   }
+  .video-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+  }
+  .bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 </style>
 CSS;
     }
@@ -683,6 +697,11 @@ HTML;
 {$eyeStyles}
 </head>
 <body>
+<div class="video-container">
+  <video autoplay loop muted playsinline class="bg-video">
+    <source src="/assets/video-fondo-login.mp4" type="video/mp4">
+  </video>
+</div>
 <div class="card">
   {$brand}
   <h1>Iniciar sesión</h1>
@@ -1168,6 +1187,11 @@ HTML;
 {$eyeStyles}
 </head>
 <body>
+<div class="video-container">
+  <video autoplay loop muted playsinline class="bg-video">
+    <source src="/assets/video-fondo-registrar.mp4" type="video/mp4">
+  </video>
+</div>
 <div class="card">
   {$brand}
   <h1>Crear cuenta</h1>

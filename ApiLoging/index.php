@@ -59,12 +59,13 @@ $method = $_SERVER['REQUEST_METHOD'];
 // ---- Assets estáticos (favicon, logo del IdP) ----
 // Whitelist por regex para evitar path traversal: solo nombres simples
 // con extensiones permitidas. Sirve archivos desde storage/assets/.
-if ($method === 'GET' && preg_match('#^/assets/([a-zA-Z0-9._-]+\.(png|svg|jpg|jpeg|webp|ico))$#', $uri, $m)) {
+if ($method === 'GET' && preg_match('#^/assets/([a-zA-Z0-9._-]+\.(png|svg|jpg|jpeg|webp|ico|mp4))$#', $uri, $m)) {
     $path = __DIR__ . '/storage/assets/' . $m[1];
     if (is_file($path)) {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $mime = ['png' => 'image/png', 'svg' => 'image/svg+xml', 'jpg' => 'image/jpeg',
-                 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'ico' => 'image/x-icon'][$ext] ?? 'application/octet-stream';
+                 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'ico' => 'image/x-icon',
+                 'mp4' => 'video/mp4'][$ext] ?? 'application/octet-stream';
         header('Content-Type: ' . $mime);
         header('Cache-Control: public, max-age=3600');
         readfile($path);
