@@ -878,13 +878,17 @@ JS;
         // Phone es opcional. Si viene relleno, validamos formato laxo (dígitos +
         // separadores comunes, 5-30 chars). Si solo viene espacios o caracteres
         // raros, lo rechazamos para no guardar basura.
-        if ($phone !== '' && !preg_match('/^[\d\s+\-()]{5,30}$/', $phone)) {
+        if ($phone === '') {
+            self::renderRegisterForm($returnTo, 'El teléfono es obligatorio.', $values);
+            return;
+        }
+        if (!preg_match('/^[\d\s+\-()]{5,30}$/', $phone)) {
             self::renderRegisterForm($returnTo, 'Formato de teléfono no válido (5-30 caracteres, solo dígitos y + - ( )).', $values);
             return;
         }
 
         $db = Database::connect();
-        // Unicidad del email y username contra users (cuentas confirmadas).
+        // Unicidad del email, username y teléfono contra users (cuentas confirmadas).
         $existsEmail = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
         $existsEmail->execute([':email' => $email]);
         if ($existsEmail->fetch()) {
@@ -895,6 +899,12 @@ JS;
         $existsUsername->execute([':u' => $username]);
         if ($existsUsername->fetch()) {
             self::renderRegisterForm($returnTo, 'Ese nombre de usuario ya está en uso.', $values);
+            return;
+        }
+        $existsPhone = $db->prepare('SELECT id FROM users WHERE phone = :phone LIMIT 1');
+        $existsPhone->execute([':phone' => $phone]);
+        if ($existsPhone->fetch()) {
+            self::renderRegisterForm($returnTo, 'Ya existe una cuenta con ese número de teléfono.', $values);
             return;
         }
         // Y contra pendings ACTIVOS (no caducados) para evitar reservar el
@@ -1208,8 +1218,8 @@ HTML;
     <label for="email">Email
       <input id="email" name="email" type="email" required autocomplete="email" value="{$emailEsc}" placeholder="tu@email.com">
     </label>
-    <label for="phone"><span>Teléfono <span class="optional">(opcional)</span></span>
-      <input id="phone" name="phone" type="tel" autocomplete="tel" pattern="[\d\s+\-()]{5,30}" value="{$phoneEsc}" placeholder="+34 600 000 000">
+    <label for="phone"><span>Teléfono</span>
+      <input id="phone" name="phone" type="tel" required autocomplete="tel" pattern="[\d\s+\-()]{5,30}" value="{$phoneEsc}" placeholder="+34 600 000 000">
     </label>
     <label for="password">Contraseña
       <div class="pw-wrap" data-reveal="false">
