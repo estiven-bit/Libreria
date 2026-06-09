@@ -93,8 +93,8 @@ class ProductController
             Response::json(['error' => 'Solo se permiten JPG o PNG'], 422);
         }
 
-        // Convertir la imagen a un data URL base64 y guardarla directamente en BD
-        $imgData = file_get_contents($tmp);
+        // Comprimir y redimensionar la imagen si es demasiado grande antes de guardarla
+        $imgData = $this->compressAndResizeImage($tmp, $mime);
         $base64 = base64_encode($imgData);
         $url = 'data:' . $mime . ';base64,' . $base64;
 
@@ -106,5 +106,60 @@ class ProductController
             'image_url' => $url,
             'id' => (int)$this->db->lastInsertId(),
         ], 201);
+    }
+
+    /**
+     * Redimensiona la imagen a max 1000px y la comprime para evitar superar
+     * el límite de max_allowed_packet de MySQL al guardarla como base64.
+     */
+    private function compressAndResizeImage(string $filePath, string $mime): string
+    {
+        if (!extension_loaded('gd') || !in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            return file_get_contents($filePath);
+        }
+
+        $srcImage = $mime === 'image/jpeg' 
+            ? @imagecreatefromjpeg($filePath) 
+            : @imagecreatefrompng($filePath);
+
+        if (!$srcImage) {
+            return file_get_contents($filePath);
+        }
+
+        $width = imagesx($srcImage);
+        $height = imagesy($srcImage);
+        $maxSize = 1000;
+
+        if ($width > $maxSize || $height > $maxSize) {
+            if ($width > $height) {
+                $newWidth = $maxSize;
+                $newHeight = (int)($height * ($maxSize / $width));
+            } else {
+                $newHeight = $maxSize;
+                $newWidth = (int)($width * ($maxSize / $height));
+            }
+
+            $dstImage = imagecreatetruecolor($newWidth, $newHeight);
+            
+            if ($mime === 'image/png') {
+                imagealphablending($dstImage, false);
+                imagesavealpha($dstImage, true);
+            }
+
+            imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($srcImage);
+            $srcImage = $dstImage;
+        }
+
+        ob_start();
+        if ($mime === 'image/jpeg') {
+            imagejpeg($srcImage, null, 75); // 75% calidad para JPG
+        } else {
+            imagepng($srcImage, null, 6); // 6/9 compresión para PNG
+        }
+        $data = ob_get_clean();
+        imagedestroy($srcImage);
+
+        return $data;
     }
 }

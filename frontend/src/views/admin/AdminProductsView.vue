@@ -82,8 +82,10 @@
           </div>
 
           <div class="modal-actions">
-            <button class="btn ghost" type="button" @click="closeCreate">Cancelar</button>
-            <button class="btn btn-primary" type="button" @click="createProduct">Crear producto</button>
+            <button class="btn ghost" type="button" :disabled="isCreating" @click="closeCreate">Cancelar</button>
+            <button class="btn btn-primary" type="button" :disabled="isCreating" @click="createProduct">
+              {{ isCreating ? 'Creando...' : 'Crear producto' }}
+            </button>
           </div>
         </div>
       </div>
@@ -140,8 +142,10 @@
           </div>
 
           <div class="modal-actions">
-            <button class="btn ghost" type="button" @click="editOpen = false">Cancelar</button>
-            <button class="btn btn-primary" type="button" @click="saveEdit">Guardar cambios</button>
+            <button class="btn ghost" type="button" :disabled="isSaving" @click="editOpen = false">Cancelar</button>
+            <button class="btn btn-primary" type="button" :disabled="isSaving" @click="saveEdit">
+              {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
           </div>
         </div>
       </div>
@@ -168,6 +172,9 @@ const editForm = ref({ id: null, name: '', price: 0, stock: 0, category_id: '', 
 
 const newImageFiles = ref([])
 const editImageFiles = ref([])
+
+const isCreating = ref(false)
+const isSaving = ref(false)
 
 const onPickFile = (e) => { newImageFiles.value = Array.from(e.target.files || []) }
 const onPickEditFile = (e) => { editImageFiles.value = Array.from(e.target.files || []) }
@@ -199,6 +206,8 @@ const loadProducts = async () => {
 
 const createProduct = async () => {
   if (!form.value.name) return toast.error('El nombre del libro es obligatorio')
+  if (isCreating.value) return
+  isCreating.value = true
   try {
     const res = await api.post('/api/admin/products', { ...form.value })
     const id = res.id
@@ -210,6 +219,8 @@ const createProduct = async () => {
     await loadProducts()
   } catch (e) {
     toast.error(e?.message || 'Error al crear el producto')
+  } finally {
+    isCreating.value = false
   }
 }
 
@@ -238,6 +249,8 @@ const openEdit = (p) => {
 }
 
 const saveEdit = async () => {
+  if (isSaving.value) return
+  isSaving.value = true
   const { id, ...body } = editForm.value
   try {
     await api.put(`/api/admin/products/${id}`, body)
@@ -250,6 +263,8 @@ const saveEdit = async () => {
     await loadProducts()
   } catch (e) {
     toast.error(e?.message || 'Error al guardar')
+  } finally {
+    isSaving.value = false
   }
 }
 
