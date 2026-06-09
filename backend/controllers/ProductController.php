@@ -93,20 +93,10 @@ class ProductController
             Response::json(['error' => 'Solo se permiten JPG o PNG'], 422);
         }
 
-        $ext = $mime === 'image/jpeg' ? 'jpg' : 'png';
-        $dir = dirname(__DIR__) . '/public/uploads/products';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $filename = 'p_' . bin2hex(random_bytes(8)) . '.' . $ext;
-        $dest = $dir . '/' . $filename;
-        if (!move_uploaded_file($tmp, $dest)) {
-            Response::json(['error' => 'No se pudo guardar el archivo'], 500);
-        }
-
-        $base = $this->app['public_url'] ?? 'http://localhost/libreria_gabi/backend/public';
-        $url = $base . '/uploads/products/' . $filename;
+        // Convertir la imagen a un data URL base64 y guardarla directamente en BD
+        $imgData = file_get_contents($tmp);
+        $base64 = base64_encode($imgData);
+        $url = 'data:' . $mime . ';base64,' . $base64;
 
         $stmt = $this->db->prepare('INSERT INTO product_images (product_id, image_url) VALUES (:pid, :url)');
         $stmt->execute(['pid' => $productId, 'url' => $url]);
