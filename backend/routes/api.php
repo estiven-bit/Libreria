@@ -14,6 +14,8 @@ return [
     ['GET', '/api/categories', 'categories.list'],
     ['GET', '/products', 'products.list'],
     ['GET', '/api/products', 'products.list'],
+    ['GET', '/products/{id}/images/{imageId}', 'products.image'],
+    ['GET', '/api/products/{id}/images/{imageId}', 'products.image'],
     ['GET', '/products/{id}', 'products.show'],
     ['GET', '/api/products/{id}', 'products.show'],
 

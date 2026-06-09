@@ -6,7 +6,9 @@ class Product extends BaseModel
 {
     public function list(array $filters = []): array
     {
-        $sql = 'SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
+        $sql = 'SELECT p.*, c.name AS category_name,
+            (SELECT pi.id FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.id ASC LIMIT 1) AS primary_image_id
+            FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
         $params = [];
 
         if (!empty($filters['category_id'])) {
@@ -51,7 +53,7 @@ class Product extends BaseModel
             return null;
         }
 
-        $img = $this->db->prepare('SELECT id, image_url FROM product_images WHERE product_id = :pid ORDER BY id ASC');
+        $img = $this->db->prepare('SELECT id FROM product_images WHERE product_id = :pid ORDER BY id ASC');
         $img->execute(['pid' => $id]);
         $product['images'] = $img->fetchAll();
         $product['category'] = [

@@ -19,6 +19,10 @@ class ProductController
     {
         $model = new Product($this->db);
         $products = $model->list($filters);
+        foreach ($products as &$product) {
+            $product = $this->withPublicImageUrls($product);
+        }
+        unset($product);
         Response::json(['data' => $products]);
     }
 
@@ -31,18 +35,71 @@ class ProductController
         }
 
         $images = $product['images'] ?? [];
-        $primary = $images[0]['image_url'] ?? null;
-        $product['image_url'] = $primary;
+        $product['images'] = array_map(
+            fn(array $img) => [
+                'id' => (int)$img['id'],
+                'image_url' => $this->imagePublicPath($id, (int)$img['id']),
+            ],
+            $images
+        );
+        $product['image_url'] = $product['images'][0]['image_url'] ?? null;
+        unset($product['category_name'], $product['category_parent_id']);
 
-        $json = json_encode(['data' => $product], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-        if ($json === false) {
-            Response::json(['error' => 'Error al serializar el producto'], 500);
+        Response::json(['data' => $product]);
+    }
+
+    public function serveImage(int $productId, int $imageId): void
+    {
+        $stmt = $this->db->prepare(
+            'SELECT image_url FROM product_images WHERE id = :image_id AND product_id = :product_id LIMIT 1'
+        );
+        $stmt->execute(['image_id' => $imageId, 'product_id' => $productId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            Response::json(['error' => 'Image not found'], 404);
         }
 
-        http_response_code(200);
-        header('Content-Type: application/json; charset=utf-8');
-        echo $json;
-        exit;
+        $stored = (string)$row['image_url'];
+        if (str_starts_with($stored, 'data:') && preg_match('#^data:([^;]+);base64,(.+)$#s', $stored, $m)) {
+            $binary = base64_decode($m[2], true);
+            if ($binary === false) {
+                Response::json(['error' => 'Invalid image data'], 500);
+            }
+            http_response_code(200);
+            header('Content-Type: ' . $m[1]);
+            header('Cache-Control: public, max-age=86400');
+            echo $binary;
+            exit;
+        }
+
+        if (str_starts_with($stored, '/uploads/')) {
+            $path = rtrim($this->app['uploads_path'] ?? '', '/') . '/' . basename($stored);
+            if (is_file($path)) {
+                $mime = mime_content_type($path) ?: 'application/octet-stream';
+                http_response_code(200);
+                header('Content-Type: ' . $mime);
+                header('Cache-Control: public, max-age=86400');
+                readfile($path);
+                exit;
+            }
+        }
+
+        Response::json(['error' => 'Image not found'], 404);
+    }
+
+    private function imagePublicPath(int $productId, int $imageId): string
+    {
+        return '/api/products/' . $productId . '/images/' . $imageId;
+    }
+
+    private function withPublicImageUrls(array $product): array
+    {
+        $imageId = isset($product['primary_image_id']) ? (int)$product['primary_image_id'] : 0;
+        if ($imageId > 0) {
+            $product['image_url'] = $this->imagePublicPath((int)$product['id'], $imageId);
+        }
+        unset($product['primary_image_id']);
+        return $product;
     }
 
     public function create(array $data): void
@@ -117,10 +174,11 @@ class ProductController
             Response::json(['error' => 'No se pudo guardar la imagen en la base de datos'], 500);
         }
 
+        $imageId = (int)$this->db->lastInsertId();
         Response::json([
             'message' => 'Image uploaded',
-            'image_url' => $url,
-            'id' => (int)$this->db->lastInsertId(),
+            'image_url' => $this->imagePublicPath($productId, $imageId),
+            'id' => $imageId,
         ], 201);
     }
 

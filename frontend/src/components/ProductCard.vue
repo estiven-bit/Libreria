@@ -13,10 +13,11 @@
 
 <script setup>
 import { computed } from 'vue'
+import { api } from '../services/api'
 import placeholderImage from '../assets/img/placeholder.png'
 const props = defineProps({
   product: { type: Object, required: true },
 })
 
-const image = computed(() => props.product.image_url || placeholderImage)
+const image = computed(() => api.mediaUrl(props.product.image_url) || placeholderImage)
 </script>

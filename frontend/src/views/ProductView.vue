@@ -62,10 +62,10 @@ const mainImage = ref(placeholderImage)
 const thumbnails = computed(() => {
   const imgs = product.value?.images
   if (Array.isArray(imgs) && imgs.length) {
-    return imgs.map((i) => i.image_url).filter(Boolean)
+    return imgs.map((i) => api.mediaUrl(i.image_url)).filter(Boolean)
   }
   if (product.value?.image_url) {
-    return [product.value.image_url]
+    return [api.mediaUrl(product.value.image_url)]
   }
   return [placeholderImage]
 })
@@ -85,7 +85,7 @@ watch(
   (p) => {
     if (!p) return
     const first = thumbnails.value[0]
-    mainImage.value = first || p.image_url || placeholderImage
+    mainImage.value = first || api.mediaUrl(p.image_url) || placeholderImage
   },
 )
 

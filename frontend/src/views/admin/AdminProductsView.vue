@@ -16,7 +16,7 @@
 
       <div class="card product-row" v-for="product in products" :key="product.id">
         <div class="product-thumb">
-          <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="thumb-img" />
+          <img v-if="product.image_url" :src="api.mediaUrl(product.image_url)" :alt="product.name" class="thumb-img" />
           <div v-else class="thumb-placeholder">📚</div>
         </div>
         <div class="product-info">

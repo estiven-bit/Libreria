@@ -168,6 +168,9 @@ switch ($handler) {
     case 'products.list':
         (new ProductController($db, $config['app']))->list($_GET);
         break;
+    case 'products.image':
+        (new ProductController($db, $config['app']))->serveImage((int)$params[0], (int)$params[1]);
+        break;
     case 'products.show':
         (new ProductController($db, $config['app']))->show((int)$params[0]);
         break;
