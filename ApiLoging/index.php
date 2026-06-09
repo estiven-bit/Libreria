@@ -27,6 +27,7 @@ require_once __DIR__ . '/config/Env.php';
 require_once __DIR__ . '/config/Database.php';
 require_once __DIR__ . '/utils/Response.php';
 require_once __DIR__ . '/utils/Security.php';
+require_once __DIR__ . '/utils/DatabaseSessionHandler.php';
 require_once __DIR__ . '/services/MailService.php';
 require_once __DIR__ . '/services/GeoLocationService.php';
 require_once __DIR__ . '/services/NotionService.php';
@@ -35,6 +36,9 @@ require_once __DIR__ . '/controllers/BffController.php';
 require_once __DIR__ . '/controllers/ServiceController.php';
 
 Env::load(__DIR__ . '/.env');
+
+// Registramos el manejador de sesiones en base de datos para persistencia en entorno Serverless
+session_set_save_handler(new DatabaseSessionHandler(), true);
 
 Security::sendSecurityHeaders();
 Security::enforceProductionTransport();
