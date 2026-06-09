@@ -23,6 +23,7 @@ onMounted(async () => {
     
     const res = await fetch(`${api.BFF_BASE}/bff/start?client=${clientId}`, {
       method: 'GET',
+      credentials: 'include',
     })
     
     if (!res.ok) {
