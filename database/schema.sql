@@ -42,7 +42,7 @@ CREATE TABLE products (
 CREATE TABLE product_images (
   id INT AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
-  image_url VARCHAR(255) NOT NULL,
+  image_url MEDIUMTEXT NOT NULL,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

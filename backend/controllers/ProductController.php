@@ -34,7 +34,15 @@ class ProductController
         $primary = $images[0]['image_url'] ?? null;
         $product['image_url'] = $primary;
 
-        Response::json(['data' => $product]);
+        $json = json_encode(['data' => $product], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($json === false) {
+            Response::json(['error' => 'Error al serializar el producto'], 500);
+        }
+
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo $json;
+        exit;
     }
 
     public function create(array $data): void
@@ -95,11 +103,19 @@ class ProductController
 
         // Comprimir y redimensionar la imagen si es demasiado grande antes de guardarla
         $imgData = $this->compressAndResizeImage($tmp, $mime);
+        if (strlen($imgData) > 900000) {
+            Response::json(['error' => 'La imagen sigue siendo demasiado grande tras comprimirla. Prueba con otra más pequeña.'], 422);
+        }
+
         $base64 = base64_encode($imgData);
         $url = 'data:' . $mime . ';base64,' . $base64;
 
-        $stmt = $this->db->prepare('INSERT INTO product_images (product_id, image_url) VALUES (:pid, :url)');
-        $stmt->execute(['pid' => $productId, 'url' => $url]);
+        try {
+            $stmt = $this->db->prepare('INSERT INTO product_images (product_id, image_url) VALUES (:pid, :url)');
+            $stmt->execute(['pid' => $productId, 'url' => $url]);
+        } catch (\PDOException $e) {
+            Response::json(['error' => 'No se pudo guardar la imagen en la base de datos'], 500);
+        }
 
         Response::json([
             'message' => 'Image uploaded',

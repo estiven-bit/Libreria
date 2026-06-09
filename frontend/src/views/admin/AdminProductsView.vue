@@ -31,7 +31,7 @@
 
       <!-- Modal CREAR producto -->
       <div v-if="createOpen" class="modal-backdrop" @click.self="closeCreate">
-        <div class="modal card">
+        <div class="modal card" :class="{ 'modal-busy': isCreating }">
           <div class="modal-header">
             <h3>Nuevo producto</h3>
             <button class="btn-close" type="button" @click="closeCreate">✕</button>
@@ -84,9 +84,10 @@
           <div class="modal-actions">
             <button class="btn ghost" type="button" :disabled="isCreating" @click="closeCreate">Cancelar</button>
             <button class="btn btn-primary" type="button" :disabled="isCreating" @click="createProduct">
-              {{ isCreating ? 'Creando...' : 'Crear producto' }}
+              {{ isCreating ? 'Creando producto…' : 'Crear producto' }}
             </button>
           </div>
+          <p v-if="isCreating" class="creating-hint">No cierres esta ventana hasta que termine.</p>
         </div>
       </div>
 
@@ -180,6 +181,7 @@ const onPickFile = (e) => { newImageFiles.value = Array.from(e.target.files || [
 const onPickEditFile = (e) => { editImageFiles.value = Array.from(e.target.files || []) }
 
 const closeCreate = () => {
+  if (isCreating.value) return
   createOpen.value = false
   form.value = { name: '', price: 0, stock: 0, category_id: categories.value[0]?.id ?? '', description: '' }
   newImageFiles.value = []
@@ -205,18 +207,29 @@ const loadProducts = async () => {
 }
 
 const createProduct = async () => {
-  if (!form.value.name) return toast.error('El nombre del libro es obligatorio')
   if (isCreating.value) return
+  if (!form.value.name) return toast.error('El nombre del libro es obligatorio')
   isCreating.value = true
   try {
     const res = await api.post('/api/admin/products', { ...form.value })
     const id = res.id
+    let imageErrors = 0
     if (id && newImageFiles.value.length) {
-      for (const file of newImageFiles.value) await uploadImage(id, file)
+      for (const file of newImageFiles.value) {
+        try {
+          await uploadImage(id, file)
+        } catch {
+          imageErrors++
+        }
+      }
     }
-    toast.success('Producto creado correctamente')
     closeCreate()
     await loadProducts()
+    if (imageErrors > 0) {
+      toast.error(`Producto creado, pero ${imageErrors} imagen(es) no se pudieron subir`)
+    } else {
+      toast.success('Producto creado correctamente')
+    }
   } catch (e) {
     toast.error(e?.message || 'Error al crear el producto')
   } finally {
@@ -386,6 +399,16 @@ onMounted(async () => {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 20px;
+}
+.modal-busy {
+  pointer-events: none;
+  opacity: 0.85;
+}
+.creating-hint {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-align: center;
 }
 
 /* Formulario con grid */

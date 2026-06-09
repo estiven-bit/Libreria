@@ -115,8 +115,10 @@ if ($handler === 'health') {
 
 // Reglas de acceso
 $user = null;
+$isAdminApiPath = str_starts_with($uri, '/api/admin/');
 if (
-    str_starts_with($handler, 'admin.')
+    $isAdminApiPath
+    || str_starts_with($handler, 'admin.')
     || str_starts_with($handler, 'cart.')
     || str_starts_with($handler, 'orders.')
     || str_starts_with($handler, 'user.')
@@ -126,7 +128,7 @@ if (
     $user = AuthMiddleware::requireAuth($config['app']);
 }
 
-if (str_starts_with($handler, 'admin.')) {
+if ($isAdminApiPath || str_starts_with($handler, 'admin.')) {
     AdminMiddleware::requireAdmin($user);
 }
 

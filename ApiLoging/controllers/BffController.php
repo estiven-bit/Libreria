@@ -623,7 +623,8 @@ class BffController
         // Reglas de auth por app:
         // Todo lo que llegue a endpoints de administración exige admin.
         $requiresAdmin = str_starts_with($path, 'admin-')
-            || str_starts_with($path, 'admin/');
+            || str_starts_with($path, 'admin/')
+            || str_contains($path, '/admin/');
         $user = null;
         if ($requiresAdmin) {
             $user = self::verifyAdminAuth();
@@ -835,6 +836,9 @@ class BffController
                 header($line);
             }
         }
+        // Si el backend falla (500), el navegador aún necesita CORS para que
+        // el frontend pueda leer el JSON de error en lugar de un bloqueo opaco.
+        Security::bootstrapCors();
         echo $respBody;
         exit;
     }
