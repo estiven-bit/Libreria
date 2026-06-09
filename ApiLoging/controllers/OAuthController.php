@@ -1036,8 +1036,8 @@ JS;
         $db->beginTransaction();
         try {
             $insert = $db->prepare(
-                'INSERT INTO users (username, email, password, password_hash, name, first_name, last_name, phone, role, is_email_verified, email_verified_at, created_at)
-                 VALUES (:u, :email, :pass, :pass_hash, :name, :first, :last, :phone, \'user\', 1, NOW(), NOW())'
+                'INSERT INTO users (username, email, password, password_hash, name, first_name, last_name, phone, role, is_email_verified, email_verified_at, created_at, is_active)
+                 VALUES (:u, :email, :pass, :pass_hash, :name, :first, :last, :phone, \'user\', 1, NOW(), NOW(), 1)'
             );
             $insert->execute([
                 ':u' => $pending['username'] ?: null,
@@ -1056,7 +1056,7 @@ JS;
             $db->commit();
         } catch (\Throwable $e) {
             $db->rollBack();
-            self::renderVerifyResult(false, 'No se pudo activar la cuenta. Inténtalo de nuevo.');
+            self::renderVerifyResult(false, 'No se pudo activar la cuenta. Detalles: ' . $e->getMessage());
             return;
         }
 
