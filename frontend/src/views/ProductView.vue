@@ -8,15 +8,35 @@
     <section class="section product-page" v-else-if="product">
       <div class="product-detail">
         <div class="gallery">
-          <img class="main-img" :src="mainImage" :alt="product.name" />
-          <div v-if="thumbnails.length" class="thumbs">
+          <div class="main-image-wrap">
+            <button
+              v-if="canNavigate"
+              type="button"
+              class="gallery-arrow gallery-arrow--prev"
+              aria-label="Imagen anterior"
+              @click="prevImage"
+            >
+              ‹
+            </button>
+            <img class="main-img" :src="mainImage" :alt="product.name" />
+            <button
+              v-if="canNavigate"
+              type="button"
+              class="gallery-arrow gallery-arrow--next"
+              aria-label="Imagen siguiente"
+              @click="nextImage"
+            >
+              ›
+            </button>
+          </div>
+          <div v-if="thumbnails.length > 1" class="thumbs">
             <button
               v-for="(img, idx) in thumbnails"
               :key="idx"
               type="button"
               class="thumb"
-              :class="{ active: mainImage === img }"
-              @click="mainImage = img"
+              :class="{ active: currentImageIndex === idx }"
+              @click="currentImageIndex = idx"
             >
               <img :src="img" alt="" />
             </button>
@@ -57,7 +77,7 @@ const cart = useCartStore()
 const product = ref(null)
 const error = ref('')
 const quantity = ref(1)
-const mainImage = ref(placeholderImage)
+const currentImageIndex = ref(0)
 
 const thumbnails = computed(() => {
   const imgs = product.value?.images
@@ -69,6 +89,27 @@ const thumbnails = computed(() => {
   }
   return [placeholderImage]
 })
+
+const canNavigate = computed(() => thumbnails.value.length > 1)
+
+const mainImage = computed(() => {
+  const list = thumbnails.value
+  if (!list.length) return placeholderImage
+  const idx = Math.min(currentImageIndex.value, list.length - 1)
+  return list[idx]
+})
+
+const prevImage = () => {
+  const n = thumbnails.value.length
+  if (n <= 1) return
+  currentImageIndex.value = (currentImageIndex.value - 1 + n) % n
+}
+
+const nextImage = () => {
+  const n = thumbnails.value.length
+  if (n <= 1) return
+  currentImageIndex.value = (currentImageIndex.value + 1) % n
+}
 
 const productId = computed(() => {
   if (route.name === 'producto' && route.params.id != null) {
@@ -84,8 +125,7 @@ watch(
   () => product.value,
   (p) => {
     if (!p) return
-    const first = thumbnails.value[0]
-    mainImage.value = first || api.mediaUrl(p.image_url) || placeholderImage
+    currentImageIndex.value = 0
   },
 )
 
@@ -141,12 +181,49 @@ watch(productId, () => load())
   flex-direction: column;
   gap: 12px;
 }
-.main-img {
+.main-image-wrap {
+  position: relative;
   width: 100%;
-  max-height: 420px;
-  object-fit: contain;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 16px;
   background: #f1f5f9;
+  overflow: hidden;
+}
+.main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a233d;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.15);
+  transition: background 0.2s, transform 0.2s;
+}
+.gallery-arrow:hover {
+  background: #fff;
+  transform: translateY(-50%) scale(1.05);
+}
+.gallery-arrow--prev {
+  left: 12px;
+}
+.gallery-arrow--next {
+  right: 12px;
 }
 .thumbs {
   display: flex;
@@ -218,6 +295,20 @@ watch(productId, () => load())
 @media (max-width: 768px) {
   .product-detail {
     grid-template-columns: 1fr;
+  }
+  .main-image-wrap {
+    aspect-ratio: 1 / 1;
+  }
+  .gallery-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+  }
+  .gallery-arrow--prev {
+    left: 6px;
+  }
+  .gallery-arrow--next {
+    right: 6px;
   }
 }
 </style>

@@ -144,18 +144,20 @@ watch(() => route.query.categoria, (newVal) => {
   padding: 0 40px; /* Margen lateral en escritorio */
 }
 
-/* --- SIDEBAR IZQUIERDA --- */
+/* --- SIDEBAR IZQUIERDA (fijo al hacer scroll) --- */
 .sidebar-wrapper {
-  display: flex;
-  align-items: center;
-  min-height: 100vh;
   position: sticky;
-  top: 0;
+  top: 100px;
+  align-self: start;
+  z-index: 10;
+  max-height: calc(100vh - 116px);
 }
 
 .sidebar-sticky {
   width: 100%;
-  background: rgba(30, 41, 59, 0.4);
+  max-height: calc(100vh - 116px);
+  overflow-y: auto;
+  background: rgba(30, 41, 59, 0.85);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
@@ -228,12 +230,12 @@ watch(() => route.query.categoria, (newVal) => {
 .products-vertical-column {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 16px;
   max-width: 800px;
   width: 100%;
-  padding-left: 0px; /* Ajustado para que el contenido no toque los bordes del recuadro */
-  background: rgba(255, 255, 255, 0.05); /* Recuadro traslúcido */
-  backdrop-filter: blur(10px); /* Efecto de desenfoque */
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -258,18 +260,20 @@ watch(() => route.query.categoria, (newVal) => {
     gap: 20px;
   }
 
-  .sidebar-wrapper { 
-    min-height: auto; 
-    position: relative; 
-    top: 0; 
-    padding-top: 60px; 
-    display: block; 
+  .sidebar-wrapper {
+    position: sticky;
+    top: 88px;
+    z-index: 20;
+    max-height: none;
+    padding-top: 16px;
   }
 
   .sidebar-sticky {
     width: 100%;
+    max-height: none;
+    overflow-y: visible;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
 
   .products-container { 
@@ -280,11 +284,8 @@ watch(() => route.query.categoria, (newVal) => {
   .products-vertical-column {
     max-width: 100%;
     width: 100%;
-    padding: 20px; /* Padding interno para que los libros no toquen el borde del recuadro */
-    padding-left: 20px !important; /* IMPORTANTE: Esto anula los 500px que rompen el diseño */
+    padding: 16px;
     margin: 0 auto;
-    background: rgba(255, 255, 255, 0.05); /* Recuadro traslúcido también en móvil */
-    backdrop-filter: blur(10px);
     border-radius: 15px;
   }
 }
