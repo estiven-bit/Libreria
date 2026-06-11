@@ -74,7 +74,7 @@ async function handleUnauthorized() {
   unauthorizedHandling = unauthorizedHandling.then(async () => {
     try {
       const { useAuthStore } = await import('../stores/auth')
-      useAuthStore().logout()
+      useAuthStore().logout({ redirectHome: false })
     } catch {
       localStorage.removeItem('user')
       localStorage.removeItem('token')

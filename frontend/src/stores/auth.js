@@ -41,7 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
           applyUserFromClaims(data.user)
           return true
         } else {
-          await logout()
+          await logout({ redirectHome: false })
           return false
         }
       } catch (error) {
@@ -59,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
     throw new Error('Flujo de login por contraseña deshabilitado en favor de SSO.')
   }
 
-  async function logout() {
+  async function logout({ redirectHome = true } = {}) {
     try {
       await fetch(`${api.BFF_BASE}/bff/logout`, {
         method: 'POST',
@@ -71,6 +71,19 @@ export const useAuthStore = defineStore('auth', () => {
     legacyStore.logout()
     localStorage.removeItem('user')
     user.value = null
+
+    if (!redirectHome) return
+
+    try {
+      const { default: router } = await import('../router')
+      if (router.currentRoute.value.name !== 'home') {
+        await router.push({ name: 'home' })
+      }
+    } catch {
+      if (window.location.pathname !== '/') {
+        window.location.assign('/')
+      }
+    }
   }
 
   return { user, token, hydrate, applyUserFromClaims, login, logout }
