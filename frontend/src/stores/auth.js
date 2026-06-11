@@ -9,6 +9,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   let hydrationPromise = null
 
+  function applyUserFromClaims(claims) {
+    if (!claims) return false
+    const normalizedUser = {
+      id: parseInt(claims.sub),
+      name: claims.name,
+      email: claims.email,
+      role: claims.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO',
+      is_active: 1,
+    }
+    localStorage.setItem('user', JSON.stringify(normalizedUser))
+    user.value = normalizedUser
+    legacyStore.user = normalizedUser
+    return true
+  }
+
   async function hydrate() {
     if (hydrationPromise) return hydrationPromise
 
@@ -23,17 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
         }
         const data = await res.json()
         if (data.authenticated && data.user) {
-          const claims = data.user
-          const normalizedUser = {
-            id: parseInt(claims.sub),
-            name: claims.name,
-            email: claims.email,
-            role: claims.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO',
-            is_active: 1,
-          }
-          localStorage.setItem('user', JSON.stringify(normalizedUser))
-          user.value = normalizedUser
-          legacyStore.user = normalizedUser
+          applyUserFromClaims(data.user)
           return true
         } else {
           await logout()
@@ -68,5 +73,5 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  return { user, token, hydrate, login, logout }
+  return { user, token, hydrate, applyUserFromClaims, login, logout }
 })

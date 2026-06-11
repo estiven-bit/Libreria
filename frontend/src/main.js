@@ -10,7 +10,6 @@ import './styles/main.css'
 const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
-useAuthStore().hydrate()
 app.provide('store', store)
 app.use(router)
 app.mount('#app')

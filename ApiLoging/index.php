@@ -27,6 +27,7 @@ require_once __DIR__ . '/config/Env.php';
 require_once __DIR__ . '/config/Database.php';
 require_once __DIR__ . '/utils/Response.php';
 require_once __DIR__ . '/utils/Security.php';
+require_once __DIR__ . '/utils/DeferredTasks.php';
 require_once __DIR__ . '/utils/DatabaseSessionHandler.php';
 require_once __DIR__ . '/services/MailService.php';
 require_once __DIR__ . '/services/GeoLocationService.php';
@@ -36,6 +37,17 @@ require_once __DIR__ . '/controllers/BffController.php';
 require_once __DIR__ . '/controllers/ServiceController.php';
 
 Env::load(__DIR__ . '/.env');
+
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+// Keep-alive ligero: sin sesión ni BD (Vercel cron cada 5 min).
+if ($uri === '/bff/health' && $method === 'GET') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['ok' => true, 'ts' => time()]);
+    exit;
+}
 
 // Registramos el manejador de sesiones en base de datos para persistencia en entorno Serverless
 session_set_save_handler(new DatabaseSessionHandler(), true);
@@ -56,9 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // el navegador la enviaría en peticiones cross-site originadas por terceros
 // sin esta validación. Ver utils/Security.php::enforceBffCsrf().
 Security::enforceBffCsrf();
-
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
-$method = $_SERVER['REQUEST_METHOD'];
 
 // ---- Assets estáticos (favicon, logo del IdP) ----
 // Whitelist por regex para evitar path traversal: solo nombres simples
@@ -99,6 +108,7 @@ if ($uri === '/idp/logout' && in_array($method, ['GET', 'POST'], true)) OAuthCon
 if ($uri === '/idp/logout-one' && $method === 'GET') OAuthController::idpLogoutOne();
 
 // ---- BFF endpoints (cada frontend los llama via Vite proxy) ----
+if ($uri === '/bff/health' && $method === 'GET') BffController::health();
 if ($uri === '/bff/start' && $method === 'GET') BffController::start();
 if ($uri === '/bff/callback' && $method === 'GET') BffController::callback();
 if ($uri === '/bff/me' && $method === 'GET') BffController::me();

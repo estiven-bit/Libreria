@@ -26,6 +26,14 @@ use LibreriaGabi\OAuth2\ServerFactory;
  */
 class BffController
 {
+    /** @var array<string, array|null> */
+    private static array $clientCache = [];
+
+    public static function health(): void
+    {
+        Response::json(['ok' => true, 'ts' => time()]);
+    }
+
     private static function startSession(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -56,11 +64,16 @@ class BffController
 
     private static function lookupClient(string $clientId): ?array
     {
+        if (array_key_exists($clientId, self::$clientCache)) {
+            return self::$clientCache[$clientId];
+        }
+
         $stmt = Database::connect()->prepare(
             'SELECT id, redirect_uri FROM oauth_clients WHERE id = :id AND is_revoked = 0'
         );
         $stmt->execute([':id' => $clientId]);
         $row = $stmt->fetch();
+        self::$clientCache[$clientId] = $row ?: null;
         return $row ?: null;
     }
 
@@ -199,7 +212,11 @@ class BffController
         $_SESSION['oauth_active_user'] = $userId;
         session_regenerate_id(true);
 
-        Response::json(['ok' => true]);
+        Response::json([
+            'ok' => true,
+            'authenticated' => true,
+            'user' => $claims,
+        ]);
     }
 
     /**
@@ -229,17 +246,24 @@ class BffController
                 ->withHeader('Authorization', 'Bearer ' . $session['access_token']);
             $request = $resourceServer->validateAuthenticatedRequest($request);
             $userId = (int)$request->getAttribute('oauth_user_id');
-            $user = UserRepository::findById($userId);
-            if (!$user) {
-                self::removeAccount($userId);
-                Response::json(['authenticated' => false, 'reason' => 'user_not_found'], 200);
+
+            $claims = $session['claims_cache'] ?? null;
+            if (!$claims) {
+                $user = UserRepository::findById($userId);
+                if (!$user) {
+                    self::removeAccount($userId);
+                    Response::json(['authenticated' => false, 'reason' => 'user_not_found'], 200);
+                }
+                $claims = $user->claims;
+                if (isset($_SESSION['oauth_by_user'][$userId])) {
+                    $_SESSION['oauth_by_user'][$userId]['claims_cache'] = $claims;
+                }
             }
-            // Refrescamos last_seen en la user_session enlazada al access_token.
-            // Permite que el panel admin muestre "actividad reciente" con precisión
-            // de segundos, sin polling adicional (esta llamada ya ocurre en cada
-            // mount + visibilitychange del frontend).
+
+            // Throttle last_seen: como máximo 1 UPDATE/min por sesión BFF.
             $accessTokenId = (string)$request->getAttribute('oauth_access_token_id');
-            if ($accessTokenId !== '') {
+            $lastBump = (int)($_SESSION['last_seen_bump'] ?? 0);
+            if ($accessTokenId !== '' && (time() - $lastBump) >= 60) {
                 $upd = Database::connect()->prepare(
                     'UPDATE user_sessions us
                      INNER JOIN oauth_access_tokens at ON at.session_id = us.id
@@ -247,8 +271,9 @@ class BffController
                      WHERE at.id = :tid AND us.revoked_at IS NULL'
                 );
                 $upd->execute([':tid' => $accessTokenId]);
+                $_SESSION['last_seen_bump'] = time();
             }
-            Response::json(['authenticated' => true, 'user' => $user->claims]);
+            Response::json(['authenticated' => true, 'user' => $claims]);
         } catch (OAuthServerException $e) {
             self::removeAccount((int)$_SESSION['oauth_active_user']);
             Response::json(['authenticated' => false, 'reason' => 'invalid_token'], 200);

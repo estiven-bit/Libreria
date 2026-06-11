@@ -260,8 +260,7 @@ class OAuthController
             // Si la combinación dispositivo+país es nueva, dispara email alert.
             self::recordSession($newUserId, (string)$user['email'], (string)$user['name']);
 
-            header('Location: ' . $returnTo);
-            exit;
+            DeferredTasks::redirect($returnTo);
         }
 
         self::renderLoginForm($returnTo, '');
@@ -362,10 +361,19 @@ class OAuthController
             $confirmUrl = ServerFactory::issuer() . '/idp/login-confirm?token=' . $rawToken . '&action=ok';
             $denyUrl = ServerFactory::issuer() . '/idp/login-confirm?token=' . $rawToken . '&action=deny';
 
-            MailService::sendNewDeviceAlert(
-                $userEmail, $userName, $device, $location, date('d/m/Y H:i'),
-                $confirmUrl, $denyUrl
-            );
+            DeferredTasks::runAfterResponse(static function () use (
+                $userEmail, $userName, $device, $location, $confirmUrl, $denyUrl
+            ): void {
+                MailService::sendNewDeviceAlert(
+                    $userEmail,
+                    $userName,
+                    $device,
+                    $location,
+                    date('d/m/Y H:i'),
+                    $confirmUrl,
+                    $denyUrl
+                );
+            });
         }
     }
 
@@ -1079,8 +1087,7 @@ JS;
         // de vuelta en su app SIN tener que clickar nada más.
         $ret = (string)($pending['return_to'] ?? '');
         if ($ret !== '' && str_starts_with($ret, '/') && !str_starts_with($ret, '//')) {
-            header('Location: ' . $ret);
-            exit;
+            DeferredTasks::redirect($ret);
         }
         // Sin return válido (registro fuera de OAuth flow): página estática.
         self::renderVerifyResult(true, 'Cuenta activada y sesión iniciada. Cierra esta pestaña y vuelve a tu aplicación.');

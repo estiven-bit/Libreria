@@ -37,13 +37,15 @@ onMounted(async () => {
       credentials: 'include',
     })
     
+    const payload = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const payload = await res.json().catch(() => ({}))
       throw new Error(payload.error || 'No se pudo completar el intercambio de token en el BFF')
     }
 
-    // 2. Cargar perfil desde /bff/me a través del store
-    const userLoaded = await auth.hydrate()
+    // 2. Usar claims del callback (evita petición extra a /bff/me)
+    const userLoaded = payload.user
+      ? auth.applyUserFromClaims(payload.user)
+      : await auth.hydrate()
     if (userLoaded) {
       toast.success('¡Sesión iniciada correctamente!')
       router.push('/perfil')

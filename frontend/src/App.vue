@@ -26,6 +26,9 @@ const store = inject('store')
 const cart = useCartStore()
 
 onMounted(async () => {
+  // Precalentar el BFF para reducir cold start al hacer login
+  fetch(`${api.BFF_BASE}/bff/health`, { method: 'GET' }).catch(() => {})
+
   const auth = useAuthStore()
   await auth.hydrate()
   if (store.user) {

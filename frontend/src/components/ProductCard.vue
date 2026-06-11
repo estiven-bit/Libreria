@@ -28,10 +28,12 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
   align-items: center;
   gap: 1.25rem;
   padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-radius: 14px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .product-image {
@@ -40,7 +42,8 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
   height: 130px;
   border-radius: 10px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .product-image img {
@@ -58,7 +61,7 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
 .product-info h3 {
   margin: 0 0 0.35rem;
   font-size: 1.05rem;
-  color: #1e293b;
+  color: #ffffff;
   line-height: 1.3;
 }
 
@@ -66,7 +69,7 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
   font-weight: 800;
-  color: #ff6b6b;
+  color: #ff9f43;
 }
 
 .btn-detail {
