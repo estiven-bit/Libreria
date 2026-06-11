@@ -74,16 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (!redirectHome) return
 
-    try {
-      const { default: router } = await import('../router')
-      if (router.currentRoute.value.name !== 'home') {
-        await router.push({ name: 'home' })
-      }
-    } catch {
-      if (window.location.pathname !== '/') {
-        window.location.assign('/')
-      }
-    }
+    window.location.assign(`${api.BFF_BASE}/idp/logout?return=${encodeURIComponent(window.location.origin)}`)
   }
 
   return { user, token, hydrate, applyUserFromClaims, login, logout }

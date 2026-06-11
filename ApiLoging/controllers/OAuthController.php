@@ -543,11 +543,13 @@ class OAuthController
   .card {
     width: 100%;
     max-width: 420px;
-    background: var(--paper);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 16px;
     padding: 2.25rem 2rem 2rem;
-    box-shadow: 0 30px 80px rgba(17, 30, 51, 0.12);
+    box-shadow: 0 24px 60px rgba(17, 30, 51, 0.15);
   }
   .brand {
     display: flex;
@@ -738,9 +740,6 @@ HTML;
     {$errorBlock}
   </form>
   <p class="alt-action">¿No tienes cuenta? <a href="{$registerHref}">Crear una</a></p>
-  <footer>
-    Una sola cuenta para <span class="gold">todo el ecosistema</span>
-  </footer>
 </div>
 <script nonce="{$nonce}">{$eyeScript}</script>
 </body>
