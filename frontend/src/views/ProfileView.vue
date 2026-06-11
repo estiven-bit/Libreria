@@ -20,6 +20,50 @@
         <button class="btn ghost-danger" @click="auth.logout()">Cerrar sesión</button>
       </div>
 
+      <!-- Card de Gestión de Cuenta (SSO Centralizado) -->
+      <div class="glass-card account-management-card" v-if="store.user">
+        <h3>Gestión de Cuenta Centralizada</h3>
+        <p class="section-desc">Administra tus datos personales, credenciales y dispositivos activos en nuestro sistema centralizado de identidad.</p>
+        
+        <div class="settings-grid">
+          <a :href="getSettingsUrl('cuenta')" class="setting-link-card">
+            <span class="setting-icon">👤</span>
+            <div class="setting-text">
+              <span class="setting-title">Datos personales</span>
+              <span class="setting-subtitle">Modifica tu nombre, usuario o teléfono</span>
+            </div>
+            <span class="arrow-icon">→</span>
+          </a>
+
+          <a :href="getSettingsUrl('email')" class="setting-link-card">
+            <span class="setting-icon">✉</span>
+            <div class="setting-text">
+              <span class="setting-title">Correo electrónico</span>
+              <span class="setting-subtitle">Cambia tu email de acceso con verificación</span>
+            </div>
+            <span class="arrow-icon">→</span>
+          </a>
+
+          <a :href="getSettingsUrl('seguridad')" class="setting-link-card">
+            <span class="setting-icon">🔒</span>
+            <div class="setting-text">
+              <span class="setting-title">Seguridad y Contraseña</span>
+              <span class="setting-subtitle">Actualiza tus credenciales de seguridad</span>
+            </div>
+            <span class="arrow-icon">→</span>
+          </a>
+
+          <a :href="getSettingsUrl('sesiones')" class="setting-link-card">
+            <span class="setting-icon">🖥</span>
+            <div class="setting-text">
+              <span class="setting-title">Dispositivos y Sesiones</span>
+              <span class="setting-subtitle">Audita tus dispositivos con acceso activo</span>
+            </div>
+            <span class="arrow-icon">→</span>
+          </a>
+        </div>
+      </div>
+
       <!-- Card de direcciones -->
       <div class="glass-card address-card">
         <h3>Mis Direcciones</h3>
@@ -75,6 +119,12 @@ import { useToastStore } from '../stores/toast'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+
+const getSettingsUrl = (section) => {
+  const userId = store.user?.id || 0
+  const returnUrl = encodeURIComponent(window.location.origin + '/perfil')
+  return `${api.BFF_BASE}/idp/settings?section=${section}&user=${userId}&return=${returnUrl}`
+}
 
 const addresses = ref([])
 const addressLine = ref('')
@@ -384,5 +434,94 @@ onMounted(loadAddresses)
   .form-row { grid-template-columns: 1fr; }
   .profile-card { flex-direction: column; align-items: flex-start; }
   .ghost-danger { margin-left: 0; }
+}
+
+/* Account management grid */
+.account-management-card h3 {
+  color: #ff9f43;
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.section-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 20px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.setting-link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.setting-link-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #ff9f43;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 159, 67, 0.2);
+}
+
+.setting-icon {
+  font-size: 1.35rem;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 159, 67, 0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.setting-subtitle {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrow-icon {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.3s;
+}
+
+.setting-link-card:hover .arrow-icon {
+  color: #ff9f43;
+  transform: translateX(4px);
+}
+
+@media (max-width: 650px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

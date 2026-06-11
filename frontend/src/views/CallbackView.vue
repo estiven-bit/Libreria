@@ -14,11 +14,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useCartStore } from '../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
+const cart = useCartStore()
 
 onMounted(async () => {
   const code = route.query.code
@@ -48,6 +50,21 @@ onMounted(async () => {
       : await auth.hydrate()
     if (userLoaded) {
       toast.success('¡Sesión iniciada correctamente!')
+      
+      // Sincronizar el carrito del servidor post-login
+      try {
+        const cartRes = await api.get('/api/cart')
+        const items = (cartRes.items || []).map((item) => ({
+          id: item.product_id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: Number(item.quantity),
+        }))
+        cart.setItems(items)
+      } catch (error) {
+        console.error('Error al sincronizar carrito post-login:', error)
+      }
+
       router.push('/perfil')
     } else {
       throw new Error('No se pudo recuperar el perfil del usuario después del login')

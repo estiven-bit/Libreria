@@ -168,13 +168,19 @@ watch(productId, () => load())
 .product-page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 1rem 5% 3rem;
+  padding: 2rem 5% 4rem;
+  min-height: calc(100vh - 88px - 340px); /* 88px header padding, 340px footer approx */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
 }
 .product-detail {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   align-items: start;
+  width: 100%;
 }
 .gallery {
   display: flex;

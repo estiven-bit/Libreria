@@ -29,20 +29,23 @@ onMounted(async () => {
   // Precalentar el BFF para reducir cold start al hacer login
   fetch(`${api.BFF_BASE}/bff/health`, { method: 'GET' }).catch(() => {})
 
-  const auth = useAuthStore()
-  await auth.hydrate()
-  if (store.user) {
-    try {
-      const res = await api.get('/api/cart')
-      const items = (res.items || []).map((item) => ({
-        id: item.product_id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: Number(item.quantity),
-      }))
-      cart.setItems(items)
-    } catch (error) {
-      // fallback: mantener carrito local
+  // Evitamos la condición de carrera si estamos en la página del callback OIDC
+  if (window.location.pathname !== '/oidc-callback' && !window.location.pathname.startsWith('/oidc-callback')) {
+    const auth = useAuthStore()
+    await auth.hydrate()
+    if (store.user) {
+      try {
+        const res = await api.get('/api/cart')
+        const items = (res.items || []).map((item) => ({
+          id: item.product_id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: Number(item.quantity),
+        }))
+        cart.setItems(items)
+      } catch (error) {
+        // fallback: mantener carrito local
+      }
     }
   }
 })

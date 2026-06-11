@@ -29,6 +29,7 @@ const stats = ref([
   { label: 'Productos', value: 0, icon: '📚' },
 ])
 
+
 onMounted(async () => {
   try {
     const res = await api.get('/api/admin/stats')
@@ -110,4 +111,5 @@ onMounted(async () => {
   color: #475569;
   font-size: 0.95rem;
 }
+
 </style>
