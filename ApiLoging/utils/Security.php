@@ -24,7 +24,16 @@ class Security
             }
 
             $allowedOrigins = self::allowedOrigins();
-            if (!in_array($origin, $allowedOrigins, true)) {
+            $isVercelSubdomain = (str_ends_with($origin, '.vercel.app') && $origin !== '');
+            $isLocalIp = false;
+            $appEnv = strtolower((string)(env('APP_ENV') ?: 'local'));
+            if ($appEnv !== 'production' && $appEnv !== 'prod') {
+                if (preg_match('#^http://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$#', $origin)) {
+                    $isLocalIp = true;
+                }
+            }
+
+            if (!$isVercelSubdomain && !$isLocalIp && !in_array($origin, $allowedOrigins, true)) {
                 Response::json(['error' => 'origin not allowed'], 403);
             }
 
@@ -212,6 +221,18 @@ class Security
         }
 
         $origin = $scheme . '://' . $host . ($port !== null ? ':' . $port : '');
+
+        if (str_ends_with($host, '.vercel.app')) {
+            return true;
+        }
+
+        $appEnv = strtolower((string)(env('APP_ENV') ?: 'local'));
+        if ($appEnv !== 'production' && $appEnv !== 'prod') {
+            if (preg_match('#^(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)$#', $host)) {
+                return true;
+            }
+        }
+
         return in_array($origin, $allowed, true);
     }
 

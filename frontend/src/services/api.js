@@ -1,4 +1,7 @@
-const API_BASE = (import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app').replace(/\/$/, '')
+let API_BASE = (import.meta.env.VITE_API_URL || 'https://libreria-backend-verdadero.vercel.app').replace(/\/$/, '')
+if (typeof window !== 'undefined' && API_BASE.includes('localhost') && window.location.hostname !== 'localhost') {
+  API_BASE = API_BASE.replace('localhost', window.location.hostname)
+}
 const BFF_BASE = API_BASE.includes('/bff/') ? API_BASE.split('/bff/')[0] : API_BASE
 
 function isAuthFailureEndpoint(path) {

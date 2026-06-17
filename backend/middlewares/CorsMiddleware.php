@@ -10,8 +10,17 @@ class CorsMiddleware
         // 2. Lista de orígenes permitidos desde config + cualquier subdominio *.vercel.app
         $allowed = $config['allow_origins'] ?? $config['allowed_origins'] ?? [];
 
+        $appEnv = strtolower((string)(env('APP_ENV') ?: 'development'));
+        $isLocalIp = false;
+        if ($appEnv !== 'production' && $appEnv !== 'prod') {
+            if (preg_match('#^http://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$#', $origin)) {
+                $isLocalIp = true;
+            }
+        }
+
         $isAllowed = in_array($origin, $allowed, true)
-            || (str_ends_with($origin, '.vercel.app') && $origin !== '');
+            || (str_ends_with($origin, '.vercel.app') && $origin !== '')
+            || $isLocalIp;
         if ($isAllowed) {
             header('Access-Control-Allow-Origin: ' . $origin);
         } elseif (!empty($allowed)) {
