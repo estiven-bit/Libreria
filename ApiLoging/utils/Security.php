@@ -6,48 +6,65 @@ class Security
     {
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
 
-        if (is_string($origin) && $origin !== '') {
-            // Same-origin: el form de /idp/register, /idp/settings, etc. vive
-            // en el propio dominio del IdP. Los browsers añaden Origin a todos
-            // los POST, incluso same-origin, así que sin este shortcut el
-            // form de registro recibe 403 origin_not_allowed (porque
-            // auth.libreriagabi.com no está en CORS_ALLOWED_ORIGINS — la
-            // allowlist es para clientes externos del SSO).
-            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
-                ? 'https' : 'http';
-            $selfOrigin = $proto . '://' . ($_SERVER['HTTP_HOST'] ?? '');
-            if ($origin === $selfOrigin) {
-                // Same-origin: nada que validar ni cabeceras CORS que añadir.
-                header('Access-Control-Allow-Headers: Content-Type, Authorization');
-                header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-                return;
+        // Si no hay Origin, intentamos extraerlo del Referer
+        if ((!is_string($origin) || $origin === '') && !empty($_SERVER['HTTP_REFERER'])) {
+            $referer = $_SERVER['HTTP_REFERER'];
+            $parts = parse_url($referer);
+            if (is_array($parts) && !empty($parts['scheme']) && !empty($parts['host'])) {
+                $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+                $origin = $parts['scheme'] . '://' . $parts['host'] . $port;
             }
-
-            $allowedOrigins = self::allowedOrigins();
-            $isVercelSubdomain = (str_ends_with($origin, '.vercel.app') && $origin !== '');
-            $isLocalIp = false;
-            $appEnv = strtolower((string)(env('APP_ENV') ?: 'local'));
-            if ($appEnv !== 'production' && $appEnv !== 'prod') {
-                if (preg_match('#^http://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$#', $origin)) {
-                    $isLocalIp = true;
-                }
-            }
-
-            if (!$isVercelSubdomain && !$isLocalIp && !in_array($origin, $allowedOrigins, true)) {
-                Response::json(['error' => 'origin not allowed'], 403);
-            }
-
-            header('Access-Control-Allow-Origin: ' . $origin);
-            header('Vary: Origin');
-            // El BFF emite cookie bff_session HttpOnly. En prod el frontend
-            // (libreriagabi.com etc.) vive en eTLD+1 distinto del BFF
-            // (auth.libreriagabi.com), así que es cross-site: sin este header
-            // el browser ni envía la cookie en la request ni acepta Set-Cookie
-            // en la respuesta, aunque pongamos SameSite=None; Secure.
-            header('Access-Control-Allow-Credentials: true');
         }
 
-        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        // Si sigue vacío o nulo, caemos al origen de producción
+        if (!is_string($origin) || $origin === '') {
+            $origin = 'https://libreria-taupe.vercel.app';
+        }
+
+        // Same-origin: el form de /idp/register, /idp/settings, etc. vive
+        // en el propio dominio del IdP. Los browsers añaden Origin a todos
+        // los POST, incluso same-origin, así que sin este shortcut el
+        // form de registro recibe 403 origin_not_allowed (porque
+        // auth.libreriagabi.com no está en CORS_ALLOWED_ORIGINS — la
+        // allowlist es para clientes externos del SSO).
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+            ? 'https' : 'http';
+        $selfOrigin = $proto . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+        if ($origin === $selfOrigin) {
+            // Same-origin: nada que validar ni cabeceras CORS que añadir.
+            header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            return;
+        }
+
+        $allowedOrigins = self::allowedOrigins();
+        $isVercelSubdomain = (str_ends_with($origin, '.vercel.app') && $origin !== '');
+        $isLocalIp = false;
+        $appEnv = strtolower((string)(env('APP_ENV') ?: 'local'));
+        if ($appEnv !== 'production' && $appEnv !== 'prod') {
+            if (preg_match('#^http://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$#', $origin)) {
+                $isLocalIp = true;
+            }
+        }
+
+        if (!$isVercelSubdomain && !$isLocalIp && !in_array($origin, $allowedOrigins, true)) {
+            // Si el origen no está listado, pero es una preflight (OPTIONS) o un fallback de producción,
+            // devolvemos el origen de producción en vez de lanzar 403, para no romper CORS en móviles.
+            if ($_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
+                Response::json(['error' => 'origin not allowed: ' . $origin], 403);
+            }
+            $origin = 'https://libreria-taupe.vercel.app';
+        }
+
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Vary: Origin');
+        // El BFF emite cookie bff_session HttpOnly. En prod el frontend
+        // (libreriagabi.com etc.) vive en eTLD+1 distinto del BFF
+        // (auth.libreriagabi.com), así que es cross-site: sin este header
+        // el browser ni envía la cookie en la request ni acepta Set-Cookie
+        // en la respuesta, aunque pongamos SameSite=None; Secure.
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     }
 

@@ -7,6 +7,21 @@ class CorsMiddleware
         // 1. Detectamos el origen de la petición
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+        // Si no hay Origin, intentamos extraerlo del Referer
+        if ($origin === '' && !empty($_SERVER['HTTP_REFERER'])) {
+            $referer = $_SERVER['HTTP_REFERER'];
+            $parts = parse_url($referer);
+            if (is_array($parts) && !empty($parts['scheme']) && !empty($parts['host'])) {
+                $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+                $origin = $parts['scheme'] . '://' . $parts['host'] . $port;
+            }
+        }
+
+        // Si sigue vacío, usamos el fallback de producción
+        if ($origin === '') {
+            $origin = 'https://libreria-taupe.vercel.app';
+        }
+
         // 2. Lista de orígenes permitidos desde config + cualquier subdominio *.vercel.app
         $allowed = $config['allow_origins'] ?? $config['allowed_origins'] ?? [];
 
@@ -21,11 +36,13 @@ class CorsMiddleware
         $isAllowed = in_array($origin, $allowed, true)
             || (str_ends_with($origin, '.vercel.app') && $origin !== '')
             || $isLocalIp;
+
         if ($isAllowed) {
             header('Access-Control-Allow-Origin: ' . $origin);
-        } elseif (!empty($allowed)) {
-            // Solo si hay origenes configurados, devolvemos el primero
-            header('Access-Control-Allow-Origin: ' . $allowed[0]);
+        } else {
+            // Si el origen no está listado explícitamente pero es OPTIONS o un fallback de producción,
+            // devolvemos el origen de producción en vez del localhost por defecto.
+            header('Access-Control-Allow-Origin: https://libreria-taupe.vercel.app');
         }
 
         header('Access-Control-Allow-Credentials: true');
