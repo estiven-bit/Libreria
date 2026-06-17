@@ -169,7 +169,10 @@ class PdfService
         // Carpeta temporal
         $dir = dirname(__DIR__) . '/storage/uploads/pdf';
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0755, true);
+        }
+        if (!is_writable($dir)) {
+            $dir = sys_get_temp_dir();
         }
 
         $filename = 'pedido_' . $order['id'] . '_' . time() . '.pdf';

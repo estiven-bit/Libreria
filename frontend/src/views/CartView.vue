@@ -121,13 +121,13 @@ const removeItem = async (id) => {
 
 /* Estilo Glassmorphism */
 .glass-card {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(15px) saturate(160%);
-  -webkit-backdrop-filter: blur(15px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
   color: white;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.3);
 }
 
 /* Carrito Vacío */

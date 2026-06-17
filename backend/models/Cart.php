@@ -21,7 +21,9 @@ class Cart extends BaseModel
 
     public function items(int $cartId): array
     {
-        $stmt = $this->db->prepare('SELECT ci.*, p.name, p.price, p.stock FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = :cart_id');
+        $stmt = $this->db->prepare('SELECT ci.*, p.name, p.price, p.stock,
+            (SELECT pi.id FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.id ASC LIMIT 1) AS primary_image_id
+            FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = :cart_id');
         $stmt->execute(['cart_id' => $cartId]);
         return $stmt->fetchAll();
     }

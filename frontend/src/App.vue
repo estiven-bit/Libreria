@@ -36,12 +36,16 @@ onMounted(async () => {
     if (store.user) {
       try {
         const res = await api.get('/api/cart')
-        const items = (res.items || []).map((item) => ({
-          id: item.product_id,
-          name: item.name,
-          price: Number(item.price),
-          quantity: Number(item.quantity),
-        }))
+        const items = (res.items || []).map((item) => {
+          const imageId = Number(item.primary_image_id || 0)
+          return {
+            id: item.product_id,
+            name: item.name,
+            price: Number(item.price),
+            quantity: Number(item.quantity),
+            image_url: imageId > 0 ? `/api/products/${item.product_id}/images/${imageId}` : null,
+          }
+        })
         cart.setItems(items)
       } catch (error) {
         // fallback: mantener carrito local
