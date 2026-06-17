@@ -32,7 +32,7 @@
                 :class="['cat-link', { 'is-active': selected === null }]"
                 @click="selectCategory(null)"
               >
-                <span class="dot"></span> ✨ Todos
+                <span class="dot"></span> Todos
               </button>
               
               <button 

@@ -21,7 +21,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../services/api'
-import { decodeJwtPayload } from '../services/auth'
+import { store } from '../store'
 
 const orders = ref([])
 const loading = ref(true)
@@ -40,9 +40,7 @@ onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
-    const token = localStorage.getItem('token')
-    const jwt = decodeJwtPayload(token)
-    const userId = Number(jwt?.sub || 0)
+    const userId = Number(store.user?.id || 0)
     if (!userId) {
       throw new Error('Sesion invalida')
     }
