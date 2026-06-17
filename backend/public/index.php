@@ -1,6 +1,8 @@
 <?php
 // 1. Iniciamos el buffer para evitar que cualquier espacio o log rompa el JSON
 ob_start();
+ini_set('display_errors', '0');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 
 require_once __DIR__ . '/../middlewares/CorsMiddleware.php';
 require_once __DIR__ . '/../config/config.php';

@@ -63,7 +63,7 @@ class TelegramService
             @file_put_contents($logFile, $line, FILE_APPEND);
         } finally {
             if ($ch !== null) {
-                curl_close($ch);
+                @curl_close($ch);
             }
         }
     }
@@ -130,7 +130,7 @@ class TelegramService
             @file_put_contents($logFile, $line, FILE_APPEND);
         } finally {
             if ($ch !== null) {
-                curl_close($ch);
+                @curl_close($ch);
             }
         }
     }

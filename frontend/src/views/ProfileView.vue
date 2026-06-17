@@ -208,10 +208,10 @@ onMounted(loadAddresses)
 
 /* Glassmorphism cards */
 .glass-card {
-  background: rgba(30, 41, 59, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 18px;
   color: #ffffff;
   padding: 24px 28px;

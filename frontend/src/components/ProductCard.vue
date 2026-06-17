@@ -28,11 +28,11 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
   align-items: center;
   gap: 1.25rem;
   padding: 1rem 1.25rem;
-  background: rgba(30, 41, 59, 0.45);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 

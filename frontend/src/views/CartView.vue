@@ -121,10 +121,10 @@ const removeItem = async (id) => {
 
 /* Estilo Glassmorphism */
 .glass-card {
-  background: rgba(30, 41, 59, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   color: white;
   box-shadow: 0 15px 35px rgba(0,0,0,0.3);

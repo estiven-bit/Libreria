@@ -157,9 +157,10 @@ watch(() => route.query.categoria, (newVal) => {
   width: 100%;
   max-height: calc(100vh - 116px);
   overflow-y: auto;
-  background: rgba(30, 41, 59, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 30px;
   box-shadow: 0 15px 35px rgba(0,0,0,0.3);
@@ -234,10 +235,11 @@ watch(() => route.query.categoria, (newVal) => {
   max-width: 800px;
   width: 100%;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
