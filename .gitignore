@@ -12,3 +12,4 @@ frontend/.env.local
 *.log
 dist/
 .DS_Store
+.vercel
