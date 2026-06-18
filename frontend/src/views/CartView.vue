@@ -1,9 +1,12 @@
 <template>
   <div class="page-container">
-    <video autoplay muted loop playsinline class="video-bg">
-      <source src="../assets/video-fondo-carrito.mp4" type="video/mp4">
-      Tu navegador no soporta el video.
-    </video>
+    <div class="video-background">
+      <video autoplay muted loop playsinline class="video-bg">
+        <source src="../assets/video-fondo-carrito.mp4" type="video/mp4">
+        Tu navegador no soporta el video.
+      </video>
+      <div class="video-overlay"></div>
+    </div>
 
     <section class="section">
       <h2 class="title">Tu Carrito</h2>
@@ -97,12 +100,19 @@ const removeItem = async (id) => {
 }
 
 /* Fondo de video */
-.video-bg {
+.video-background {
   position: fixed;
   top: 0; left: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100vh;
   z-index: -1;
+  overflow: hidden;
+}
+.video-bg { width: 100%; height: 100%; object-fit: cover; }
+.video-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.4);
 }
 
 .section {

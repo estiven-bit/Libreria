@@ -126,7 +126,7 @@ watch(() => route.query.categoria, (newVal) => {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.4);
   z-index: -1;
 }
 
