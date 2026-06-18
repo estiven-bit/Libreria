@@ -519,23 +519,20 @@ class OAuthController
   :root {
     --navy: #1a2d4e;
     --navy-soft: #243a63;
-    --gold: #c9a84c;
+    --gold: #ff9f43;
     --cream: #faf8f3;
     --paper: #ffffff;
-    --border: #e4e6ec;
-    --muted: #5a6478;
-    --error: #c0392b;
+    --border: rgba(255, 255, 255, 0.2);
+    --muted: #cbd5e1;
+    --error: #ff6b6b;
   }
   *, *::before, *::after { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
-    background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(201,168,76,0.12), transparent 60%),
-      radial-gradient(900px 600px at -10% 110%, rgba(26,45,78,0.08), transparent 60%),
-      var(--cream);
-    color: var(--navy);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
     display: grid;
     place-items: center;
     padding: 1.5rem;
@@ -543,13 +540,14 @@ class OAuthController
   .card {
     width: 100%;
     max-width: 420px;
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.45);
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
     padding: 2.25rem 2rem 2rem;
-    box-shadow: 0 24px 60px rgba(17, 30, 51, 0.15);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
   }
   .brand {
     display: flex;
@@ -560,22 +558,20 @@ class OAuthController
   .brand img { width: 38px; height: 38px; object-fit: contain; }
   .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
   .brand-name {
-    font-weight: 700; font-size: 1.05rem; color: var(--navy); letter-spacing: -0.01em;
+    font-weight: 700; font-size: 1.05rem; color: #ffffff; letter-spacing: -0.01em;
   }
   .brand-tagline {
-    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted);
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.16em; color: #94a3b8;
   }
-  h1 { margin: 0 0 0.25rem; font-size: 1.35rem; font-weight: 700; color: var(--navy); }
-  .lead { margin: 0 0 1.5rem; font-size: 0.88rem; color: var(--muted); }
+  h1 { margin: 0 0 0.25rem; font-size: 1.35rem; font-weight: 700; color: #ffffff; }
+  .lead { margin: 0 0 1.5rem; font-size: 0.88rem; color: #cbd5e1; }
   form { display: grid; gap: 0.95rem; }
   label {
     display: grid; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;
-    color: var(--navy); letter-spacing: 0.01em;
+    color: #e2e8f0; letter-spacing: 0.01em;
   }
-  /* Sufijo "(opcional)" dentro de un label: fluye inline al lado del texto principal,
-     más suave y ligero, sin romper la línea. */
   .optional {
-    font-weight: 400; font-size: 0.9em; color: var(--muted);
+    font-weight: 400; font-size: 0.9em; color: #94a3b8;
     margin-left: 0.25rem; letter-spacing: 0;
   }
   input[type="email"],
@@ -583,25 +579,25 @@ class OAuthController
   input[type="text"],
   input[type="tel"] {
     padding: 0.7rem 0.85rem;
-    background: var(--cream);
-    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     font-size: 0.92rem;
-    color: var(--navy);
+    color: #ffffff;
     font-family: inherit;
     transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
   }
-  input::placeholder { color: #a3acbf; }
-  input:hover { background: #fff; }
+  input::placeholder { color: #64748b; }
+  input:hover { background: rgba(15, 23, 42, 0.7); }
   input:focus {
-    outline: none; background: #fff;
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.18);
+    outline: none; background: rgba(15, 23, 42, 0.7);
+    border-color: #ff9f43;
+    box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.18);
   }
   button[type="submit"] {
     margin-top: 0.5rem;
     padding: 0.78rem 1rem;
-    background: var(--navy);
+    background: #ff9f43;
     color: #fff;
     border: 0;
     border-radius: 10px;
@@ -609,45 +605,46 @@ class OAuthController
     cursor: pointer; font-family: inherit;
     transition: background 0.18s, transform 0.1s;
     letter-spacing: 0.02em;
+    box-shadow: 0 4px 15px rgba(255, 159, 67, 0.4);
   }
-  button[type="submit"]:hover { background: var(--navy-soft); }
+  button[type="submit"]:hover { background: #ff8c1a; }
   button[type="submit"]:active { transform: translateY(1px); }
   .err {
     margin: 0.5rem 0 0;
     padding: 0.65rem 0.8rem;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: var(--error);
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ff6b6b;
     border-radius: 8px;
     font-size: 0.83rem;
   }
   .alt-action {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px dashed var(--border);
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
     text-align: center;
     font-size: 0.85rem;
-    color: var(--muted);
+    color: #cbd5e1;
   }
   .alt-action a {
-    color: var(--navy); font-weight: 600; text-decoration: none;
-    border-bottom: 1px solid var(--gold);
+    color: #ff9f43; font-weight: 600; text-decoration: none;
+    border-bottom: 1px solid #ff9f43;
     padding-bottom: 1px;
-    transition: color 0.18s;
+    transition: color 0.18s, border-color 0.18s;
   }
-  .alt-action a:hover { color: var(--gold); }
+  .alt-action a:hover { color: #ff8c1a; border-color: #ff8c1a; }
   footer {
     margin-top: 1.5rem;
     text-align: center;
     font-size: 0.72rem;
-    color: var(--muted);
+    color: #94a3b8;
     letter-spacing: 0.04em;
   }
-  footer .gold { color: var(--gold); font-weight: 600; }
+  footer .gold { color: #ff9f43; font-weight: 600; }
   .hint {
     margin: 0.2rem 0 0;
     font-size: 0.72rem;
-    color: var(--muted);
+    color: #94a3b8;
   }
   .video-container {
     position: fixed;
@@ -657,6 +654,12 @@ class OAuthController
     height: 100vh;
     z-index: -1;
     overflow: hidden;
+  }
+  .video-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.4);
   }
   .bg-video {
     width: 100%;
@@ -711,6 +714,7 @@ HTML;
   <video autoplay loop muted playsinline class="bg-video">
     <source src="/assets/video-fondo-login.mp4" type="video/mp4">
   </video>
+  <div class="video-overlay"></div>
 </div>
 <div class="card">
   {$brand}
@@ -1208,6 +1212,7 @@ HTML;
   <video autoplay loop muted playsinline class="bg-video">
     <source src="/assets/video-fondo-registrar.mp4" type="video/mp4">
   </video>
+  <div class="video-overlay"></div>
 </div>
 <div class="card">
   {$brand}
