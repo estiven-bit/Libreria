@@ -111,14 +111,22 @@ class OrderController
                 ? '<i>Pendiente de confirmación de pasarela</i>' 
                 : '<b>Pendiente de pago al recibir</b>';
 
-            $message = "📦 <b>NUEVO PEDIDO RECIBIDO</b>\n\n" .
-                       "Pedido: <b>#{$orderId}</b>\n" .
-                       "Cliente: <b>{$userInfo['name']}</b>\n" .
-                       "Total: <b>\$" . number_format($total, 2) . "</b>\n" .
-                       "Método de pago: {$methodText}\n" .
-                       "Estado: {$statusText}\n";
+            $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
+            $publicUrl = env('APP_PUBLIC_URL', 'http://localhost/libreria_gabi/backend/public');
+            $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
 
-            $tg->sendMessage($message);
+            $keyboard = [
+                'inline_keyboard' => [
+                    [
+                        [
+                            'text' => '✅ Entregado y Cobrado',
+                            'url' => $deliveryUrl
+                        ]
+                    ]
+                ]
+            ];
+
+            $tg->sendMessage($message, $keyboard);
 
             // 4. Enviar el PDF
             $caption = "Etiqueta y Ticket del Pedido #{$orderId}";
@@ -140,5 +148,128 @@ class OrderController
         $stmt = $this->db->prepare("UPDATE orders SET status = 'cancelled' WHERE id = :id AND user_id = :user_id AND status IN ('pending', 'paid')");
         $stmt->execute(['id' => $orderId, 'user_id' => $userId]);
         Response::json(['message' => 'Order cancelled']);
+    }
+
+    public function telegramDeliver(int $orderId, string $token): void
+    {
+        $expected = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
+        if (!hash_equals($expected, $token)) {
+            $this->renderHtmlFeedback("Acceso Denegado", "El token de autorización no es válido o ha expirado.", false);
+            exit;
+        }
+
+        $stmt = $this->db->prepare('SELECT id, status FROM orders WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $orderId]);
+        $order = $stmt->fetch();
+        if (!$order) {
+            $this->renderHtmlFeedback("Pedido No Encontrado", "El pedido con ID #{$orderId} no existe en la base de datos.", false);
+            exit;
+        }
+
+        if ($order['status'] === 'delivered') {
+            $this->renderHtmlFeedback("Pedido Ya Entregado", "El pedido #{$orderId} ya estaba marcado como entregado.", true);
+            exit;
+        }
+
+        $up = $this->db->prepare("UPDATE orders SET status = 'delivered' WHERE id = :id");
+        $up->execute(['id' => $orderId]);
+
+        try {
+            $logStmt = $this->db->prepare('INSERT INTO logs (event, created_at) VALUES (:event, NOW())');
+            $logStmt->execute(['event' => "Pedido #{$orderId} marcado como entregado vía Telegram"]);
+        } catch (\Exception $e) {
+            // Ignorar
+        }
+
+        $this->renderHtmlFeedback("¡Pedido Entregado!", "El pedido #{$orderId} ha sido marcado como entregado con éxito.", true);
+        exit;
+    }
+
+    private function renderHtmlFeedback(string $title, string $message, bool $success): void
+    {
+        $color = $success ? '#10b981' : '#ef4444';
+        $icon = $success ? '✓' : '✕';
+        
+        echo <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$title} | Librería Gabi</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: radial-gradient(circle at top, #fff1c2, #fff9e6);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+        }
+        .icon {
+            font-size: 40px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: {$color};
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+            transition: 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 107, 107, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">{$icon}</div>
+        <h1>{$title}</h1>
+        <p>{$message}</p>
+        <a href="/" class="btn">Ir al inicio</a>
+    </div>
+</body>
+</html>
+HTML;
     }
 }

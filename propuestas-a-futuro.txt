@@ -1,0 +1,5 @@
+- Implementar comandos interactivos en el GabiBot de Telegram (ej: `/resumen` de ventas, `/alertas` de stock bajo, `/cupones` activos).
+- Incorporar un programa de puntos de fidelidad para clientes (acumular 5% de las compras para canjear en futuros pedidos).
+- Integrar autocompletado de direcciones en el checkout mediante la API de Google Maps/Places para asegurar entregas más precisas.
+- Añadir un carrusel de libros recomendados o relacionados en la vista de detalle basados en la misma categoría/edad recomendada.
+- Diseñar un interruptor (switch) de modo oscuro en la cabecera para mejorar la accesibilidad visual.

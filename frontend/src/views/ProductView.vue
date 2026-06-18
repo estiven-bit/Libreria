@@ -54,6 +54,66 @@
           </div>
         </div>
       </div>
+
+      <!-- Sección de valoraciones y opiniones -->
+      <div class="reviews-section card">
+        <h3>Opiniones de los lectores</h3>
+        
+        <div v-if="reviews.length === 0" class="no-reviews">
+          <p>Nadie ha valorado este libro todavía. ¡Sé el primero en opinar!</p>
+        </div>
+
+        <div v-else class="reviews-list">
+          <div v-for="r in reviews" :key="r.id" class="review-item">
+            <div class="review-header">
+              <span class="reviewer-name">{{ r.user_name }}</span>
+              <span v-if="r.verified_purchase" class="verified-badge">Compra verificada</span>
+              <span class="review-date">{{ new Date(r.created_at).toLocaleDateString('es-ES') }}</span>
+            </div>
+            <div class="stars">
+              <span v-for="star in 5" :key="star" :class="['star', { active: star <= r.rating }]">★</span>
+            </div>
+            <p class="review-text">{{ r.comment }}</p>
+          </div>
+        </div>
+
+        <div class="review-form-wrapper">
+          <h4 v-if="legacyStore.user">Escribe tu opinión</h4>
+          <form v-if="legacyStore.user" @submit.prevent="submitReview" class="review-form">
+            <div class="rating-select-wrapper">
+              <label>Valoración:</label>
+              <div class="star-rating-selector">
+                <button 
+                  v-for="star in 5" 
+                  :key="star" 
+                  type="button"
+                  class="selector-star-btn"
+                  @click="rating = star"
+                >
+                  <span :class="['selector-star', { active: star <= rating }]">★</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <textarea 
+                v-model="comment" 
+                class="input review-textarea" 
+                placeholder="Escribe aquí tu reseña sobre el libro..." 
+                rows="3"
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-submit-review" :disabled="submitting">
+              {{ submitting ? 'Enviando...' : 'Publicar opinión' }}
+            </button>
+          </form>
+          <div v-else class="login-prompt">
+            <p>Debes <RouterLink to="/login">iniciar sesión</RouterLink> para dejar tu opinión sobre este libro.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section v-else class="section product-page">
@@ -78,6 +138,11 @@ const product = ref(null)
 const error = ref('')
 const quantity = ref(1)
 const currentImageIndex = ref(0)
+
+const reviews = ref([])
+const rating = ref(5)
+const comment = ref('')
+const submitting = ref(false)
 
 const thumbnails = computed(() => {
   const imgs = product.value?.images
@@ -129,9 +194,21 @@ watch(
   },
 )
 
+const loadReviews = async () => {
+  const id = productId.value
+  if (!id) return
+  try {
+    const res = await api.get(`/api/products/${id}/reviews`)
+    reviews.value = res.data || []
+  } catch (err) {
+    console.error('Error cargando reseñas:', err)
+  }
+}
+
 async function load() {
   error.value = ''
   product.value = null
+  reviews.value = []
   const id = productId.value
   if (id == null) {
     error.value = 'Producto no valido.'
@@ -140,6 +217,7 @@ async function load() {
   try {
     const res = await api.get(`/api/products/${id}`)
     product.value = res.data
+    await loadReviews()
   } catch (e) {
     error.value = e.message || 'No se pudo cargar el producto.'
   }
@@ -158,6 +236,27 @@ const addToCart = () => {
     api.post('/api/cart/add', { product_id: product.value.id, quantity: quantity.value }).catch(() => {})
   }
   toast.success('Producto anadido al carrito')
+}
+
+const submitReview = async () => {
+  if (!comment.value.trim()) {
+    return toast.error('El comentario no puede estar vacío.')
+  }
+  submitting.value = true
+  try {
+    await api.post(`/api/products/${product.value.id}/reviews`, {
+      rating: rating.value,
+      comment: comment.value,
+    })
+    toast.success('Opinión guardada correctamente.')
+    comment.value = ''
+    rating.value = 5
+    await loadReviews()
+  } catch (e) {
+    toast.error(e.message || 'Error al enviar valoración.')
+  } finally {
+    submitting.value = false
+  }
 }
 
 onMounted(load)
@@ -181,6 +280,7 @@ watch(productId, () => load())
   gap: 2rem;
   align-items: start;
   width: 100%;
+  margin-bottom: 3rem;
 }
 .gallery {
   display: flex;
@@ -298,6 +398,166 @@ watch(productId, () => load())
   color: #b91c1c;
   margin-bottom: 16px;
 }
+
+/* --- SECCIÓN VALORACIONES --- */
+.reviews-section {
+  width: 100%;
+  background: #f8fafc;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  box-sizing: border-box;
+}
+
+.reviews-section h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 1.35rem;
+}
+
+.no-reviews {
+  padding: 20px 0;
+  color: #64748b;
+  font-style: italic;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.review-item {
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.reviewer-name {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.verified-badge {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.review-date {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.stars {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.star {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+}
+
+.star.active {
+  color: #f59e0b;
+}
+
+.review-text {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.review-form-wrapper {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.review-form-wrapper h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #1e293b;
+  font-size: 1.05rem;
+}
+
+.rating-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rating-select-wrapper label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.star-rating-selector {
+  display: flex;
+  gap: 4px;
+}
+
+.selector-star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.selector-star {
+  font-size: 1.5rem;
+  color: #cbd5e1;
+  transition: color 0.1s;
+}
+
+.selector-star.active {
+  color: #f59e0b;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.btn-submit-review {
+  margin-top: 12px;
+}
+
+.login-prompt {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.login-prompt a {
+  color: #ff9f43;
+  font-weight: bold;
+  text-decoration: none;
+}
+
 @media (max-width: 768px) {
   .product-detail {
     grid-template-columns: 1fr;
@@ -315,6 +575,10 @@ watch(productId, () => load())
   }
   .gallery-arrow--next {
     right: 6px;
+  }
+  .review-date {
+    margin-left: 0;
+    width: 100%;
   }
 }
 </style>

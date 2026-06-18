@@ -18,6 +18,9 @@ return [
     ['GET', '/api/products/{id}/images/{imageId}', 'products.image'],
     ['GET', '/products/{id}', 'products.show'],
     ['GET', '/api/products/{id}', 'products.show'],
+    ['GET', '/api/products/{id}/reviews', 'products.reviews.list'],
+    ['POST', '/api/products/{id}/reviews', 'products.reviews.create'],
+    ['GET', '/api/orders/telegram-deliver', 'orders.telegramDeliver'],
 
     ['GET', '/api/cart', 'cart.get'],
     ['POST', '/api/cart/add', 'cart.add'],
@@ -56,4 +59,7 @@ return [
     ['POST', '/api/admin/products/{id}/image', 'admin.products.addImage'],
     ['PUT', '/api/admin/products/{id}', 'products.update'],
     ['DELETE', '/api/admin/products/{id}', 'products.delete'],
+    ['POST', '/api/admin/categories', 'admin.categories.create'],
+    ['PATCH', '/api/admin/categories/{id}', 'admin.categories.patch'],
+    ['DELETE', '/api/admin/categories/{id}', 'admin.categories.delete'],
 ];

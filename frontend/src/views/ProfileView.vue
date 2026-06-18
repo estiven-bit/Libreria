@@ -222,11 +222,11 @@ onMounted(loadAddresses)
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 18px;
+  border-radius: 20px;
   color: #ffffff;
   padding: 24px 28px;
   margin-bottom: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 /* Profile card: avatar + info + botón en fila */

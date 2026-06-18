@@ -26,6 +26,33 @@
           </div>
 
           <div class="filter-section">
+            <label>Ordenar por</label>
+            <select v-model="sortBy" class="search-input select-input">
+              <option value="created_at_desc">Más recientes</option>
+              <option value="price_asc">Precio: Menor a Mayor</option>
+              <option value="price_desc">Precio: Mayor a Menor</option>
+              <option value="name_asc">Título: A-Z</option>
+              <option value="name_desc">Título: Z-A</option>
+            </select>
+          </div>
+
+          <div class="filter-section">
+            <label>Precio</label>
+            <div class="price-range">
+              <input v-model.number="minPrice" type="number" class="search-input" placeholder="Mín" min="0" />
+              <span class="range-separator">-</span>
+              <input v-model.number="maxPrice" type="number" class="search-input" placeholder="Máx" min="0" />
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <label class="checkbox-label">
+              <input v-model="inStockOnly" type="checkbox" class="checkbox-input" />
+              Solo disponibles en stock
+            </label>
+          </div>
+
+          <div class="filter-section">
             <label>Categorías</label>
             <div class="category-list">
               <button 
@@ -51,14 +78,40 @@
       <main class="products-container">
         <div class="products-vertical-column">
           <ProductCard 
-            v-for="product in filtered" 
+            v-for="product in products" 
             :key="product.id" 
             :product="product" 
             class="single-column-item"
           />
           
-          <div v-if="filtered.length === 0" class="no-data">
+          <div v-if="products.length === 0" class="no-data">
             <p>No hay libros disponibles 📖</p>
+          </div>
+
+          <!-- Paginación -->
+          <div v-if="totalPages > 1" class="pagination-wrapper">
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === 1" 
+              @click="changePage(currentPage - 1)"
+            >
+              « Anterior
+            </button>
+            <button 
+              v-for="page in totalPages" 
+              :key="page" 
+              :class="['page-btn', { 'active': currentPage === page }]"
+              @click="changePage(page)"
+            >
+              {{ page }}
+            </button>
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === totalPages" 
+              @click="changePage(currentPage + 1)"
+            >
+              Siguiente »
+            </button>
           </div>
         </div>
       </main>
@@ -78,37 +131,83 @@ const products = ref([])
 const selected = ref(null)
 const search = ref('')
 
-const filtered = computed(() => {
-  const text = search.value.toLowerCase()
-  return products.value.filter((p) => {
-    const matchesCategory = !selected.value || p.category_id === parseInt(selected.value)
-    const matchesSearch = p.name.toLowerCase().includes(text)
-    return matchesCategory && matchesSearch
-  })
-})
+const minPrice = ref(null)
+const maxPrice = ref(null)
+const inStockOnly = ref(false)
+const sortBy = ref('created_at_desc')
+const currentPage = ref(1)
+const total = ref(0)
+const limit = 20
+
+const totalPages = computed(() => Math.ceil(total.value / limit))
 
 const selectCategory = (id) => {
   selected.value = id
+  currentPage.value = 1
+  loadProducts()
 }
 
-const loadData = async () => {
+const loadCategories = async () => {
   try {
     const catsRes = await api.get('/categories')
     categories.value = catsRes.data || catsRes || []
-    const prodsRes = await api.get('/products')
-    products.value = prodsRes.data || prodsRes || []
-    if (route.query.categoria) {
-      selected.value = parseInt(route.query.categoria)
-    }
   } catch (error) {
-    console.error("Error cargando datos:", error)
+    console.error("Error cargando categorías:", error)
   }
 }
 
-onMounted(loadData)
+const loadProducts = async () => {
+  try {
+    const query = new URLSearchParams({
+      page: currentPage.value,
+      limit: limit,
+      search: search.value,
+      category_id: selected.value || '',
+      min_price: minPrice.value || '',
+      max_price: maxPrice.value || '',
+      in_stock: inStockOnly.value ? 'true' : 'false',
+      sort: sortBy.value,
+    }).toString()
+    const prodsRes = await api.get(`/api/products?${query}`)
+    products.value = prodsRes.data || []
+    total.value = prodsRes.total || 0
+  } catch (error) {
+    console.error("Error cargando productos:", error)
+  }
+}
+
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadProducts()
+}
+
+onMounted(async () => {
+  await loadCategories()
+  if (route.query.categoria) {
+    selected.value = parseInt(route.query.categoria)
+  }
+  await loadProducts()
+})
 
 watch(() => route.query.categoria, (newVal) => {
   selected.value = newVal ? parseInt(newVal) : null
+  currentPage.value = 1
+  loadProducts()
+})
+
+watch([minPrice, maxPrice, inStockOnly, sortBy], () => {
+  currentPage.value = 1
+  loadProducts()
+})
+
+let searchTimeout = null
+watch(search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    loadProducts()
+  }, 400)
 })
 </script>
 
@@ -163,7 +262,7 @@ watch(() => route.query.categoria, (newVal) => {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .catalog-header h2 {
@@ -179,6 +278,10 @@ watch(() => route.query.categoria, (newVal) => {
   background: #ff9f43;
   margin: 15px 0 25px;
   border-radius: 2px;
+}
+
+.filter-section {
+  margin-bottom: 24px;
 }
 
 .filter-section label {
@@ -198,6 +301,48 @@ watch(() => route.query.categoria, (newVal) => {
   border-radius: 10px;
   color: white;
   outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.select-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 35px;
+  cursor: pointer;
+}
+
+.price-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-separator {
+  color: white;
+  font-weight: bold;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  color: white !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  accent-color: #ff9f43;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .category-list {
@@ -241,6 +386,7 @@ watch(() => route.query.categoria, (newVal) => {
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 
 .single-column-item {
@@ -252,6 +398,46 @@ watch(() => route.query.categoria, (newVal) => {
   padding: 100px 0;
   color: white;
   font-weight: 700;
+}
+
+/* --- PAGINACIÓN --- */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.9rem;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ff9f43;
+}
+
+.page-btn.active {
+  background: #ff9f43;
+  color: #1e293b;
+  border-color: #ff9f43;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* --- AJUSTES MÓVIL (CORREGIDO) --- */

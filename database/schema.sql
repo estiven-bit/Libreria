@@ -125,3 +125,15 @@ INSERT INTO categories (name, parent_id) VALUES
 ('libros para aprender a leer', NULL),
 ('fantasia infantil', NULL),
 ('aventuras infantiles', NULL);
+
+CREATE TABLE product_reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  product_id INT NOT NULL,
+  user_id INT NOT NULL,
+  rating INT NOT NULL,
+  comment TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

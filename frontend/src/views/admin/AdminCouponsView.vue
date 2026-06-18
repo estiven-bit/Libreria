@@ -4,8 +4,8 @@
     <div class="admin-content">
       <h2>Gestión de cupones</h2>
       <div class="card form-card">
-        <input v-model="code" class="input" placeholder="Código" />
-        <input v-model.number="discount" class="input" type="number" placeholder="Descuento %" />
+        <input v-model="code" class="input" placeholder="Código que se aplicará" />
+        <input v-model.number="discount" class="input" type="number" placeholder="Porcentaje de descuento que se aplicará al producto" />
         <button type="button" class="btn" @click="create">Crear</button>
       </div>
       <div class="card coupon-row" v-for="coupon in coupons" :key="coupon.id">
@@ -41,7 +41,7 @@ import { useToastStore } from '../../stores/toast'
 
 const coupons = ref([])
 const code = ref('')
-const discount = ref(0)
+const discount = ref(null)
 const toast = useToastStore()
 
 const load = async () => {
@@ -50,10 +50,13 @@ const load = async () => {
 }
 
 const create = async () => {
+  if (!code.value.trim() || discount.value === null) {
+    return toast.error('El código y el porcentaje de descuento son obligatorios')
+  }
   await api.post('/api/admin/coupons', { code: code.value, discount_percentage: discount.value, active: 1 })
   toast.success('Cupón creado')
   code.value = ''
-  discount.value = 0
+  discount.value = null
   await load()
 }
 

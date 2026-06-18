@@ -119,13 +119,15 @@ if ($handler === 'health') {
 $user = null;
 $isAdminApiPath = str_starts_with($uri, '/api/admin/');
 if (
-    $isAdminApiPath
+    ($isAdminApiPath
     || str_starts_with($handler, 'admin.')
     || str_starts_with($handler, 'cart.')
     || str_starts_with($handler, 'orders.')
     || str_starts_with($handler, 'user.')
     || $handler === 'payment.create'
     || str_starts_with($handler, 'checkout.')
+    || $handler === 'products.reviews.create')
+    && $handler !== 'orders.telegramDeliver'
 ) {
     $user = AuthMiddleware::requireAuth($config['app']);
 }
@@ -164,6 +166,15 @@ switch ($handler) {
     case 'categories.list':
         (new CategoryController($db))->list();
         break;
+    case 'admin.categories.create':
+        (new CategoryController($db))->create($body);
+        break;
+    case 'admin.categories.patch':
+        (new CategoryController($db))->update((int)$params[0], $body);
+        break;
+    case 'admin.categories.delete':
+        (new CategoryController($db))->delete((int)$params[0]);
+        break;
     case 'coupons.active':
         (new CouponController($db))->listActive();
         break;
@@ -185,6 +196,12 @@ switch ($handler) {
     case 'products.delete':
         (new ProductController($db, $config['app']))->delete((int)$params[0]);
         break;
+    case 'products.reviews.list':
+        (new ProductController($db, $config['app']))->listReviews((int)$params[0]);
+        break;
+    case 'products.reviews.create':
+        (new ProductController($db, $config['app']))->createReview((int)$params[0], (int)$user['sub'], $body);
+        break;
     case 'cart.get':
         (new CartController($db))->get((int)$user['sub']);
         break;
@@ -205,6 +222,11 @@ switch ($handler) {
         break;
     case 'orders.cancel':
         (new OrderController($db, $config))->cancel((int)$user['sub'], (int)$params[0]);
+        break;
+    case 'orders.telegramDeliver':
+        $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+        $token = isset($_GET['token']) ? (string)$_GET['token'] : '';
+        (new OrderController($db, $config))->telegramDeliver($orderId, $token);
         break;
     case 'payment.create':
         (new PaymentController($db))->create($body);

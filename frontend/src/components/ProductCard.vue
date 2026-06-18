@@ -31,9 +31,9 @@ const image = computed(() => api.mediaUrl(props.product.image_url) || placeholde
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  border-radius: 14px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .product-image {

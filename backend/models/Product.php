@@ -21,10 +21,83 @@ class Product extends BaseModel
             $params['search'] = '%' . $filters['search'] . '%';
         }
 
-        $sql .= ' ORDER BY p.created_at DESC';
+        if (!empty($filters['min_price'])) {
+            $sql .= ' AND p.price >= :min_price';
+            $params['min_price'] = (float)$filters['min_price'];
+        }
+
+        if (!empty($filters['max_price'])) {
+            $sql .= ' AND p.price <= :max_price';
+            $params['max_price'] = (float)$filters['max_price'];
+        }
+
+        if (isset($filters['in_stock']) && ($filters['in_stock'] === 'true' || $filters['in_stock'] === '1' || $filters['in_stock'] === 1)) {
+            $sql .= ' AND p.stock > 0';
+        }
+
+        $sort = $filters['sort'] ?? '';
+        switch ($sort) {
+            case 'price_asc':
+                $sql .= ' ORDER BY p.price ASC';
+                break;
+            case 'price_desc':
+                $sql .= ' ORDER BY p.price DESC';
+                break;
+            case 'name_asc':
+                $sql .= ' ORDER BY p.name ASC';
+                break;
+            case 'name_desc':
+                $sql .= ' ORDER BY p.name DESC';
+                break;
+            default:
+                $sql .= ' ORDER BY p.created_at DESC';
+                break;
+        }
+
+        if (isset($filters['limit']) && (int)$filters['limit'] > 0) {
+            $limit = (int)$filters['limit'];
+            $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+            $offset = ($page - 1) * $limit;
+            $sql .= ' LIMIT ' . $limit . ' OFFSET ' . $offset;
+        }
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    public function count(array $filters = []): int
+    {
+        $sql = 'SELECT COUNT(*) FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
+        $params = [];
+
+        if (!empty($filters['category_id'])) {
+            $sql .= ' AND p.category_id = :category_id';
+            $params['category_id'] = $filters['category_id'];
+        }
+
+        if (!empty($filters['search'])) {
+            $sql .= ' AND (p.name LIKE :search OR p.description LIKE :search)';
+            $params['search'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($filters['min_price'])) {
+            $sql .= ' AND p.price >= :min_price';
+            $params['min_price'] = (float)$filters['min_price'];
+        }
+
+        if (!empty($filters['max_price'])) {
+            $sql .= ' AND p.price <= :max_price';
+            $params['max_price'] = (float)$filters['max_price'];
+        }
+
+        if (isset($filters['in_stock']) && ($filters['in_stock'] === 'true' || $filters['in_stock'] === '1' || $filters['in_stock'] === 1)) {
+            $sql .= ' AND p.stock > 0';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
     }
 
     public function find(int $id): ?array

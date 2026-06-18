@@ -23,7 +23,14 @@ class ProductController
             $product = $this->withPublicImageUrls($product);
         }
         unset($product);
-        Response::json(['data' => $products]);
+
+        $total = $model->count($filters);
+        Response::json([
+            'data' => $products,
+            'total' => $total,
+            'page' => isset($filters['page']) ? (int)$filters['page'] : 1,
+            'limit' => isset($filters['limit']) ? (int)$filters['limit'] : 0,
+        ]);
     }
 
     public function show(int $id): void
@@ -235,5 +242,64 @@ class ProductController
         imagedestroy($srcImage);
 
         return $data;
+    }
+
+    public function listReviews(int $productId): void
+    {
+        $stmt = $this->db->prepare('
+            SELECT r.id, r.rating, r.comment, r.created_at, r.user_id, u.name AS user_name 
+            FROM product_reviews r 
+            INNER JOIN users u ON r.user_id = u.id 
+            WHERE r.product_id = :pid 
+            ORDER BY r.created_at DESC
+        ');
+        $stmt->execute(['pid' => $productId]);
+        $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $purchaseStmt = $this->db->prepare('
+            SELECT COUNT(*) 
+            FROM orders o 
+            INNER JOIN order_items oi ON o.id = oi.order_id 
+            WHERE o.user_id = :user_id 
+              AND oi.product_id = :product_id 
+              AND o.status = "delivered"
+        ');
+
+        foreach ($reviews as &$r) {
+            $purchaseStmt->execute([
+                'user_id' => (int)$r['user_id'],
+                'product_id' => $productId,
+            ]);
+            $count = (int)$purchaseStmt->fetchColumn();
+            $r['verified_purchase'] = ($count > 0);
+            unset($r['user_id']);
+        }
+        unset($r);
+
+        Response::json(['data' => $reviews]);
+    }
+
+    public function createReview(int $productId, int $userId, array $body): void
+    {
+        $rating = isset($body['rating']) ? (int)$body['rating'] : 0;
+        $comment = isset($body['comment']) ? trim((string)$body['comment']) : '';
+
+        if ($rating < 1 || $rating > 5 || $comment === '') {
+            Response::json(['error' => 'La valoración (1-5) y el comentario son obligatorios.'], 422);
+            return;
+        }
+
+        $stmt = $this->db->prepare('
+            INSERT INTO product_reviews (product_id, user_id, rating, comment, created_at) 
+            VALUES (:pid, :uid, :rating, :comment, NOW())
+        ');
+        $stmt->execute([
+            'pid' => $productId,
+            'uid' => $userId,
+            'rating' => $rating,
+            'comment' => $comment,
+        ]);
+
+        Response::json(['message' => 'Comentario añadido con éxito.'], 201);
     }
 }

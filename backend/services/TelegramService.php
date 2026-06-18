@@ -19,7 +19,7 @@ class TelegramService
         return $this->token !== '' && $this->chatId !== '';
     }
 
-    public function sendMessage(string $text): void
+    public function sendMessage(string $text, ?array $replyMarkup = null): void
     {
         if (!$this->isConfigured() || $text === '') {
             return;
@@ -29,11 +29,15 @@ class TelegramService
 
         try {
             $url = 'https://api.telegram.org/bot' . rawurlencode($this->token) . '/sendMessage';
-            $payload = http_build_query([
+            $params = [
                 'chat_id' => $this->chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
-            ]);
+            ];
+            if ($replyMarkup !== null) {
+                $params['reply_markup'] = json_encode($replyMarkup);
+            }
+            $payload = http_build_query($params);
 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -72,11 +76,28 @@ class TelegramService
     {
         $name = htmlspecialchars($customerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $totalFmt = number_format($total, 2, '.', '');
+
+        $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
+        $publicUrl = env('APP_PUBLIC_URL', 'http://localhost/libreria_gabi/backend/public');
+        $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
+
+        $keyboard = [
+            'inline_keyboard' => [
+                [
+                    [
+                        'text' => '✅ Entregado',
+                        'url' => $deliveryUrl
+                    ]
+                ]
+            ]
+        ];
+
         $this->sendMessage(
             "<b>Pedido pagado</b>\n" .
             "ID: <b>{$orderId}</b>\n" .
             "Cliente: {$name}\n" .
-            "Total: <b>\${$totalFmt}</b>"
+            "Total: <b>\${$totalFmt}</b>",
+            $keyboard
         );
     }
 

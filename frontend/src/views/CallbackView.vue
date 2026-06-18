@@ -53,6 +53,17 @@ onMounted(async () => {
       
       // Sincronizar el carrito del servidor post-login
       try {
+        const localItems = [...cart.items]
+        if (localItems.length > 0) {
+          for (const item of localItems) {
+            try {
+              await api.post('/api/cart/add', { product_id: item.id, quantity: item.quantity })
+            } catch (err) {
+              console.error('Error al subir item local al servidor:', err)
+            }
+          }
+        }
+
         const cartRes = await api.get('/api/cart')
         const items = (cartRes.items || []).map((item) => {
           const imageId = Number(item.primary_image_id || 0)

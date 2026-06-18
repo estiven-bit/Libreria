@@ -17,6 +17,7 @@ import AdminOrdersView from '../views/admin/AdminOrdersView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminCouponsView from '../views/admin/AdminCouponsView.vue'
 import AdminLogsView from '../views/admin/AdminLogsView.vue'
+import AdminCategoriesView from '../views/admin/AdminCategoriesView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import ActivateView from '../views/Activate.vue'
 import CallbackView from '../views/CallbackView.vue'
@@ -40,6 +41,7 @@ const routes = [
   { path: '/admin/pedidos', name: 'admin-orders', component: AdminOrdersView },
   { path: '/admin/usuarios', name: 'admin-users', component: AdminUsersView },
   { path: '/admin/cupones', name: 'admin-coupons', component: AdminCouponsView },
+  { path: '/admin/categorias', name: 'admin-categories', component: AdminCategoriesView },
   { path: '/admin/logs', name: 'admin-logs', component: AdminLogsView },
   { path: '/activate', name: 'activate', component: ActivateView, meta: { title: 'Activar Cuenta', description: 'Verificacion de tu cuenta en Libreria Gabi.' } },
   { path: '/oidc-callback', name: 'oidc-callback', component: CallbackView, meta: { title: 'Verificando sesión', description: 'Procesando login centralizado…' } },
