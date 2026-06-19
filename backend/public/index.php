@@ -130,6 +130,7 @@ if (
     || str_starts_with($handler, 'checkout.')
     || $handler === 'products.reviews.create')
     && $handler !== 'orders.telegramDeliver'
+    && $handler !== 'orders.telegramUpdate'
 ) {
     $user = AuthMiddleware::requireAuth($config['app']);
 }
@@ -235,6 +236,12 @@ switch ($handler) {
         $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
         $token = isset($_GET['token']) ? (string)$_GET['token'] : '';
         (new OrderController($db, $config))->telegramDeliver($orderId, $token);
+        break;
+    case 'orders.telegramUpdate':
+        $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+        $status = isset($_GET['status']) ? (string)$_GET['status'] : '';
+        $token = isset($_GET['token']) ? (string)$_GET['token'] : '';
+        (new OrderController($db, $config))->telegramUpdateStatus($orderId, $status, $token);
         break;
     case 'payment.create':
         (new PaymentController($db))->create($body);

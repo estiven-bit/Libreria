@@ -202,7 +202,8 @@ class PaymentService
                 $uRow = $uStmt->fetch();
                 if ($uRow) {
                     require_once __DIR__ . '/../models/Notification.php';
-                    (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido #' . $orderId . ' ha sido pagado con éxito.');
+                    $bookDesc = Notification::getOrderBooksDescription($this->db, $orderId);
+                    (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido de ' . $bookDesc . ' ha sido pagado con éxito.');
                 }
             } catch (\Throwable $e) {
                 // Ignore notification error

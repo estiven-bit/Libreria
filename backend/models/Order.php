@@ -4,14 +4,16 @@ require_once __DIR__ . '/BaseModel.php';
 
 class Order extends BaseModel
 {
-    public function create(int $userId, string $status, float $total, string $paymentMethod): int
+    public function create(int $userId, string $status, float $total, string $paymentMethod, ?string $couponCode = null, float $discountAmount = 0.00): int
     {
-        $stmt = $this->db->prepare('INSERT INTO orders (user_id, status, total_price, payment_method, created_at) VALUES (:user_id, :status, :total_price, :payment_method, NOW())');
+        $stmt = $this->db->prepare('INSERT INTO orders (user_id, status, total_price, payment_method, coupon_code, discount_amount, created_at) VALUES (:user_id, :status, :total_price, :payment_method, :coupon_code, :discount_amount, NOW())');
         $stmt->execute([
             'user_id' => $userId,
             'status' => $status,
             'total_price' => $total,
             'payment_method' => $paymentMethod,
+            'coupon_code' => $couponCode,
+            'discount_amount' => $discountAmount,
         ]);
         return (int)$this->db->lastInsertId();
     }

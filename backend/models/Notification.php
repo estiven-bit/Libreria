@@ -26,4 +26,28 @@ class Notification extends BaseModel
         $stmt = $this->db->prepare('UPDATE user_notifications SET is_read = 1 WHERE user_id = :user_id');
         $stmt->execute(['user_id' => $userId]);
     }
+
+    public static function getOrderBooksDescription(PDO $db, int $orderId): string
+    {
+        $stmt = $db->prepare('
+            SELECT p.name
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = :order_id
+        ');
+        $stmt->execute(['order_id' => $orderId]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (!$items) {
+            return 'libro';
+        }
+        
+        $firstItemName = $items[0]['name'] ?? 'libro';
+        $itemsCount = count($items);
+        $bookDesc = '"' . $firstItemName . '"';
+        if ($itemsCount > 1) {
+            $bookDesc .= ' (y ' . ($itemsCount - 1) . ' más)';
+        }
+        return $bookDesc;
+    }
 }

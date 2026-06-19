@@ -40,6 +40,9 @@
             Pago al recibir
           </label>
 
+          <div class="coupon-title">
+            <span>Si tienes algún cupón de descuento, añádelo:</span>
+          </div>
           <div class="coupon-section">
             <input v-model="coupon" class="input coupon-input" placeholder="Codigo de cupon" />
             <button class="btn btn-apply-coupon" type="button" @click="applyCoupon">Aplicar</button>
@@ -321,5 +324,12 @@ onMounted(loadAddresses)
   .checkout-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.coupon-title {
+  margin-top: 15px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #475569;
 }
 </style>

@@ -33,7 +33,7 @@ class Security
         if ($origin === $selfOrigin) {
             // Same-origin: nada que validar ni cabeceras CORS que añadir.
             header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
-            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
             return;
         }
 
@@ -65,7 +65,7 @@ class Security
         // en la respuesta, aunque pongamos SameSite=None; Secure.
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
     }
 
     public static function sendSecurityHeaders(): void

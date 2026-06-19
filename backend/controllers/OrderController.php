@@ -44,16 +44,20 @@ class OrderController
             $total += $item['price'] * $item['quantity'];
         }
 
+        $couponCode = null;
+        $discountAmount = 0.00;
         if (!empty($data['coupon_code'])) {
             $couponModel = new Coupon($this->db);
             $coupon = $couponModel->findActiveByCode($data['coupon_code']);
             if ($coupon) {
-                $total = $total - ($total * ($coupon['discount_percentage'] / 100));
+                $couponCode = $coupon['code'];
+                $discountAmount = $total * ($coupon['discount_percentage'] / 100);
+                $total = $total - $discountAmount;
             }
         }
 
         $orderModel = new Order($this->db);
-        $orderId = $orderModel->create($userId, 'pending', (float)$total, $data['payment_method'] ?? 'cash_on_delivery');
+        $orderId = $orderModel->create($userId, 'pending', (float)$total, $data['payment_method'] ?? 'cash_on_delivery', $couponCode, (float)$discountAmount);
 
         foreach ($items as $item) {
             $orderModel->addItem($orderId, (int)$item['product_id'], (int)$item['quantity'], (float)$item['price']);
@@ -64,7 +68,8 @@ class OrderController
         // Insert notification
         try {
             require_once __DIR__ . '/../models/Notification.php';
-            (new Notification($this->db))->create($userId, $orderId, 'Tu pedido #' . $orderId . ' ha sido recibido.');
+            $bookDesc = Notification::getOrderBooksDescription($this->db, $orderId);
+            (new Notification($this->db))->create($userId, $orderId, 'Tu pedido de ' . $bookDesc . ' ha sido recibido.');
         } catch (\Throwable $e) {
             // Ignore
         }
@@ -114,8 +119,11 @@ class OrderController
                 ? '<i>Pendiente de confirmación de pasarela</i>' 
                 : '<b>Pendiente de pago al recibir</b>';
 
-            $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
-            
+            $secretPrep = hash_hmac('sha256', $orderId . '-preparing', env('JWT_SECRET', 'change_this_secret'));
+            $secretReady = hash_hmac('sha256', $orderId . '-ready', env('JWT_SECRET', 'change_this_secret'));
+            $secretDeliv = hash_hmac('sha256', $orderId . '-delivered', env('JWT_SECRET', 'change_this_secret'));
+            $secretCancel = hash_hmac('sha256', $orderId . '-cancelled', env('JWT_SECRET', 'change_this_secret'));
+
             $publicUrl = env('APP_PUBLIC_URL', '');
             if (empty($publicUrl) || (str_contains($publicUrl, 'localhost') && isset($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost'))) {
                 $protocol = 'https';
@@ -133,7 +141,10 @@ class OrderController
                 $publicUrl = 'http://localhost/libreria_gabi/backend/public';
             }
 
-            $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
+            $urlPrep = rtrim($publicUrl, '/') . "/api/orders/telegram-update?order_id={$orderId}&status=preparing&token={$secretPrep}";
+            $urlReady = rtrim($publicUrl, '/') . "/api/orders/telegram-update?order_id={$orderId}&status=ready&token={$secretReady}";
+            $urlDeliv = rtrim($publicUrl, '/') . "/api/orders/telegram-update?order_id={$orderId}&status=delivered&token={$secretDeliv}";
+            $urlCancel = rtrim($publicUrl, '/') . "/api/orders/telegram-update?order_id={$orderId}&status=cancelled&token={$secretCancel}";
 
             $customerNameEscaped = htmlspecialchars($userInfo['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $customerEmailEscaped = htmlspecialchars($userInfo['email'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -161,8 +172,22 @@ class OrderController
                 'inline_keyboard' => [
                     [
                         [
+                            'text' => '⚙️ Preparando',
+                            'url' => $urlPrep
+                        ],
+                        [
+                            'text' => '📦 Listo para Entregar',
+                            'url' => $urlReady
+                        ]
+                    ],
+                    [
+                        [
                             'text' => '✅ Entregado y Cobrado',
-                            'url' => $deliveryUrl
+                            'url' => $urlDeliv
+                        ],
+                        [
+                            'text' => '❌ Cancelar Pedido',
+                            'url' => $urlCancel
                         ]
                     ]
                 ]
@@ -233,7 +258,8 @@ class OrderController
             $uRow = $uStmt->fetch();
             if ($uRow) {
                 require_once __DIR__ . '/../models/Notification.php';
-                (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido #' . $orderId . ' ha sido entregado.');
+                $bookDesc = Notification::getOrderBooksDescription($this->db, $orderId);
+                (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido de ' . $bookDesc . ' ha sido entregado.');
             }
         } catch (\Throwable $e) {
             // Ignore
@@ -250,6 +276,83 @@ class OrderController
         }
 
         $this->renderHtmlFeedback("¡Pedido Entregado!", "El pedido #{$orderId} ha sido marcado como entregado con éxito.", true);
+        exit;
+    }
+
+    public function telegramUpdateStatus(int $orderId, string $status, string $token): void
+    {
+        $expected = hash_hmac('sha256', $orderId . '-' . $status, env('JWT_SECRET', 'change_this_secret'));
+        if (!hash_equals($expected, $token)) {
+            $this->renderHtmlFeedback("Acceso Denegado", "El token de autorización no es válido o ha expirado.", false);
+            exit;
+        }
+
+        $stmt = $this->db->prepare('SELECT id, status, user_id FROM orders WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $orderId]);
+        $order = $stmt->fetch();
+        if (!$order) {
+            $this->renderHtmlFeedback("Pedido No Encontrado", "El pedido con ID #{$orderId} no existe en la base de datos.", false);
+            exit;
+        }
+
+        if ($order['status'] === $status) {
+            $this->renderHtmlFeedback("Estado ya actualizado", "El pedido #{$orderId} ya se encuentra en estado '{$status}'.", true);
+            exit;
+        }
+
+        $up = $this->db->prepare("UPDATE orders SET status = :status WHERE id = :id");
+        $up->execute(['status' => $status, 'id' => $orderId]);
+
+        if (in_array($status, ['paid', 'delivered'], true)) {
+            $stockService = new StockService($this->db);
+            $stockService->reduceStockForOrder($orderId);
+        }
+
+        // Send user notification
+        try {
+            require_once __DIR__ . '/../models/Notification.php';
+            $bookDesc = Notification::getOrderBooksDescription($this->db, $orderId);
+            
+            $statusMap = [
+                'pending' => 'Tu pedido de ' . $bookDesc . ' ha sido recibido.',
+                'paid' => 'Tu pedido de ' . $bookDesc . ' ha sido pagado con éxito.',
+                'cancelled' => 'Tu pedido de ' . $bookDesc . ' ha sido cancelado.',
+                'preparing' => 'Tu pedido de ' . $bookDesc . ' se está preparando.',
+                'ready' => 'Tu pedido de ' . $bookDesc . ' está listo para entregar.',
+                'shipped' => 'Tu pedido de ' . $bookDesc . ' ha sido enviado.',
+                'delivered' => 'Tu pedido de ' . $bookDesc . ' ha sido entregado.'
+            ];
+            
+            $msg = $statusMap[$status] ?? ('El estado de tu pedido de ' . $bookDesc . ' ha cambiado a ' . $status);
+            (new Notification($this->db))->create((int)$order['user_id'], $orderId, $msg);
+        } catch (\Throwable $e) {
+            // Ignore
+        }
+
+        try {
+            $logStmt = $this->db->prepare('INSERT INTO logs (event, created_at) VALUES (:event, NOW())');
+            $logStmt->execute(['event' => "Pedido #{$orderId} cambiado a '{$status}' vía Telegram"]);
+        } catch (\Exception $e) {
+            // Ignore
+        }
+
+        $titleMap = [
+            'preparing' => '¡Pedido en Preparación!',
+            'ready' => '¡Pedido Listo para Entregar!',
+            'delivered' => '¡Pedido Entregado!',
+            'cancelled' => '¡Pedido Cancelado!'
+        ];
+        $msgMap = [
+            'preparing' => 'El pedido #'.$orderId.' ha sido marcado en preparación con éxito.',
+            'ready' => 'El pedido #'.$orderId.' ha sido marcado como listo para entregar.',
+            'delivered' => 'El pedido #'.$orderId.' ha sido marcado como entregado y cobrado con éxito.',
+            'cancelled' => 'El pedido #'.$orderId.' ha sido cancelado con éxito.'
+        ];
+        $title = $titleMap[$status] ?? '¡Estado Actualizado!';
+        $message = $msgMap[$status] ?? 'El pedido #'.$orderId.' ha cambiado de estado con éxito.';
+
+        $isSuccess = ($status !== 'cancelled');
+        $this->renderHtmlFeedback($title, $message, $isSuccess);
         exit;
     }
 

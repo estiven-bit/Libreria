@@ -22,11 +22,13 @@
 
         <div class="order-items-list">
           <div v-for="item in order.items" :key="item.id" class="order-item-row">
-            <div class="item-cover">
+            <RouterLink :to="`/producto/${item.product_id}`" class="item-cover">
               <img :src="getImageUrl(item)" :alt="item.product_name" />
-            </div>
+            </RouterLink>
             <div class="item-info">
-              <h3 class="item-title">{{ item.product_name }}</h3>
+              <RouterLink :to="`/producto/${item.product_id}`" class="item-title-link">
+                <h3 class="item-title">{{ item.product_name }}</h3>
+              </RouterLink>
               <p class="item-qty-price">Cantidad: {{ item.quantity }} · ${{ Number(item.price).toFixed(2) }} c/u</p>
             </div>
           </div>
@@ -35,6 +37,9 @@
         <div class="order-footer">
           <div class="payment-info">
             <span class="pay-method">{{ formatPaymentMethod(order.payment_method) }}</span>
+            <span v-if="order.coupon_code && Number(order.discount_amount) > 0" class="order-savings-badge">
+              Añadido código de descuento "{{ order.coupon_code }}" y has ahorrado ${{ Number(order.discount_amount).toFixed(2) }}
+            </span>
           </div>
           <div class="order-total">
             Total: <span class="total-price">${{ Number(order.total_price).toFixed(2) }}</span>
@@ -331,5 +336,21 @@ onMounted(async () => {
 .btn:hover {
   background: #ff8c1a;
   transform: translateY(-2px);
+}
+
+.item-title-link {
+  text-decoration: none;
+  display: block;
+}
+
+.item-title-link:hover .item-title {
+  color: #ff9f43;
+}
+
+.order-savings-badge {
+  font-size: 0.78rem;
+  color: #10b981;
+  font-weight: 700;
+  margin-top: 4px;
 }
 </style>

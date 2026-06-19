@@ -22,6 +22,7 @@
           <div class="detail-item">
             <strong>Total:</strong>
             <span class="price-badge">${{ Number(order.total_price).toFixed(2) }}</span>
+            <span v-if="order.coupon_code" class="coupon-tag">Cupón: {{ order.coupon_code }} (-${{ Number(order.discount_amount).toFixed(2) }})</span>
           </div>
           <div class="detail-item">
             <strong>Método de pago:</strong>
@@ -29,16 +30,29 @@
           </div>
         </div>
 
+        <!-- Order Items -->
+        <div class="admin-order-items">
+          <div v-for="item in order.items" :key="item.id" class="admin-item-row">
+            <div class="item-cover">
+              <img :src="getImageUrl(item)" :alt="item.product_name" />
+            </div>
+            <div class="item-info">
+              <span class="item-title">{{ item.product_name }}</span>
+              <span class="item-meta">Cant: {{ item.quantity }} · ${{ Number(item.price).toFixed(2) }} u.</span>
+            </div>
+          </div>
+        </div>
+
         <div class="order-actions">
           <div class="select-wrapper">
             <select v-model="order.status" class="input select-status">
               <option value="pending">Pendiente (pending)</option>
-              <option value="paid">Pagado (paid)</option>
-              <option value="cancelled">Cancelado (cancelled)</option>
               <option value="preparing">Preparando (preparing)</option>
               <option value="ready">Listo para entregar (ready)</option>
-              <option value="shipped">Enviado (shipped)</option>
               <option value="delivered">Entregado (delivered)</option>
+              <option value="cancelled">Cancelado (cancelled)</option>
+              <option value="paid">Pagado (paid)</option>
+              <option value="shipped">Enviado (shipped)</option>
             </select>
           </div>
           <button class="btn btn-save" type="button" @click="save(order)">Guardar Estado</button>
@@ -53,9 +67,15 @@ import { onMounted, ref } from 'vue'
 import { api } from '../../services/api'
 import AdminSidebar from '../../components/AdminSidebar.vue'
 import { useToastStore } from '../../stores/toast'
+import placeholderImage from '../../assets/img/placeholder.png'
 
 const toast = useToastStore()
 const orders = ref([])
+
+const getImageUrl = (item) => {
+  if (!item.primary_image_id) return placeholderImage
+  return api.mediaUrl(`/api/products/${item.product_id}/images/${item.primary_image_id}`)
+}
 
 const load = async () => {
   try {
@@ -173,5 +193,59 @@ onMounted(async () => {
   .order-details {
     grid-template-columns: 1fr;
   }
+}
+
+.coupon-tag {
+  font-size: 0.78rem;
+  color: #10b981;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.admin-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.admin-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-cover {
+  width: 40px;
+  height: 54px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+.item-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.item-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.item-meta {
+  font-size: 0.78rem;
+  color: #64748b;
 }
 </style>

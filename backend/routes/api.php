@@ -21,6 +21,7 @@ return [
     ['GET', '/api/products/{id}/reviews', 'products.reviews.list'],
     ['POST', '/api/products/{id}/reviews', 'products.reviews.create'],
     ['GET', '/api/orders/telegram-deliver', 'orders.telegramDeliver'],
+    ['GET', '/api/orders/telegram-update', 'orders.telegramUpdate'],
 
     ['GET', '/api/cart', 'cart.get'],
     ['POST', '/api/cart/add', 'cart.add'],

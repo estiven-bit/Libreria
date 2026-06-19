@@ -65,13 +65,29 @@ class AdminController
     public function orders(): void
     {
         $stmt = $this->db->query(
-            'SELECT o.id, o.status, o.total_price, o.payment_method, o.created_at,
+            'SELECT o.id, o.status, o.total_price, o.payment_method, o.created_at, o.coupon_code, o.discount_amount,
                     u.id AS user_id, u.name AS user_name, u.email AS user_email
              FROM orders o
              INNER JOIN users u ON u.id = o.user_id
              ORDER BY o.created_at DESC'
         );
-        Response::json(['data' => $stmt->fetchAll()]);
+        $orders = $stmt->fetchAll() ?: [];
+
+        $itemStmt = $this->db->prepare('
+            SELECT oi.*, p.name as product_name,
+                (SELECT pi.id FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.id ASC LIMIT 1) AS primary_image_id
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = :order_id
+        ');
+
+        foreach ($orders as &$order) {
+            $itemStmt->execute(['order_id' => (int)$order['id']]);
+            $order['items'] = $itemStmt->fetchAll() ?: [];
+        }
+        unset($order);
+
+        Response::json(['data' => $orders]);
     }
 
     public function updateOrderStatus(int $orderId, array $data): void
@@ -104,17 +120,19 @@ class AdminController
             require_once __DIR__ . '/../models/Notification.php';
             $notificationModel = new Notification($this->db);
             
+            $bookDesc = Notification::getOrderBooksDescription($this->db, $orderId);
+            
             $statusMap = [
-                'pending' => 'Tu pedido #' . $orderId . ' ha sido recibido.',
-                'paid' => 'Tu pedido #' . $orderId . ' ha sido pagado con éxito.',
-                'cancelled' => 'Tu pedido #' . $orderId . ' ha sido cancelado.',
-                'preparing' => 'Tu pedido #' . $orderId . ' se está preparando.',
-                'ready' => 'Tu pedido #' . $orderId . ' está listo para entregar.',
-                'shipped' => 'Tu pedido #' . $orderId . ' ha sido enviado.',
-                'delivered' => 'Tu pedido #' . $orderId . ' ha sido entregado.'
+                'pending' => 'Tu pedido de ' . $bookDesc . ' ha sido recibido.',
+                'paid' => 'Tu pedido de ' . $bookDesc . ' ha sido pagado con éxito.',
+                'cancelled' => 'Tu pedido de ' . $bookDesc . ' ha sido cancelado.',
+                'preparing' => 'Tu pedido de ' . $bookDesc . ' se está preparando.',
+                'ready' => 'Tu pedido de ' . $bookDesc . ' está listo para entregar.',
+                'shipped' => 'Tu pedido de ' . $bookDesc . ' ha sido enviado.',
+                'delivered' => 'Tu pedido de ' . $bookDesc . ' ha sido entregado.'
             ];
             
-            $msg = $statusMap[$status] ?? ('El estado de tu pedido #' . $orderId . ' ha cambiado a ' . $status);
+            $msg = $statusMap[$status] ?? ('El estado de tu pedido de ' . $bookDesc . ' ha cambiado a ' . $status);
             $notificationModel->create($userId, $orderId, $msg);
         }
 
