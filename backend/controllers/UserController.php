@@ -47,7 +47,23 @@ class UserController
     public function orders(int $userId): void
     {
         $orderModel = new Order($this->db);
-        Response::json(['data' => $orderModel->listByUser($userId)]);
+        $orders = $orderModel->listByUser($userId);
+
+        $stmt = $this->db->prepare('
+            SELECT oi.*, p.name as product_name,
+                (SELECT pi.id FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.id ASC LIMIT 1) AS primary_image_id
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = :order_id
+        ');
+
+        foreach ($orders as &$order) {
+            $stmt->execute(['order_id' => (int)$order['id']]);
+            $order['items'] = $stmt->fetchAll() ?: [];
+        }
+        unset($order);
+
+        Response::json(['data' => $orders]);
     }
 
     public function deleteAddress(int $userId, int $addressId): void

@@ -56,6 +56,14 @@ class TelegramService
                 error_log(sprintf('[%s] TelegramService cURL error: %s', date('c'), $curlError));
                 throw new \RuntimeException('Telegram API: respuesta vacia o fallo de red');
             }
+
+            $resDecoded = json_decode($result, true);
+            if (isset($resDecoded['ok']) && !$resDecoded['ok']) {
+                $desc = $resDecoded['description'] ?? 'sin descripcion';
+                error_log(sprintf('[%s] TelegramService API error: %s', date('c'), $desc));
+                $logFile = dirname(__DIR__) . '/storage/logs/telegram.log';
+                @file_put_contents($logFile, sprintf("[%s] TelegramService API error: %s\n", date('c'), $desc), FILE_APPEND);
+            }
         } catch (\Throwable $e) {
             $line = sprintf(
                 "[%s] TelegramService error: %s\n",
@@ -78,7 +86,25 @@ class TelegramService
         $totalFmt = number_format($total, 2, '.', '');
 
         $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
-        $publicUrl = env('APP_PUBLIC_URL', 'http://localhost/libreria_gabi/backend/public');
+        $publicUrl = env('APP_PUBLIC_URL', '');
+        
+        if (empty($publicUrl) || (str_contains($publicUrl, 'localhost') && isset($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost'))) {
+            $protocol = 'https';
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+            }
+            $publicUrl = $protocol . '://' . $host;
+        } else {
+            if (!str_contains($publicUrl, 'localhost') && !str_contains($publicUrl, '127.0.0.1')) {
+                $publicUrl = str_replace('http://', 'https://', $publicUrl);
+            }
+        }
+        
+        if (empty($publicUrl)) {
+            $publicUrl = 'http://localhost/libreria_gabi/backend/public';
+        }
+
         $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
 
         $keyboard = [

@@ -35,6 +35,8 @@
               <option value="pending">Pendiente (pending)</option>
               <option value="paid">Pagado (paid)</option>
               <option value="cancelled">Cancelado (cancelled)</option>
+              <option value="preparing">Preparando (preparing)</option>
+              <option value="ready">Listo para entregar (ready)</option>
               <option value="shipped">Enviado (shipped)</option>
               <option value="delivered">Entregado (delivered)</option>
             </select>

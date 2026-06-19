@@ -194,6 +194,19 @@ class PaymentService
         if ($updOrder->rowCount() > 0) {
             require_once __DIR__ . '/StockService.php';
             (new StockService($this->db))->reduceStockForOrder($orderId);
+
+            // Notify user of payment success
+            try {
+                $uStmt = $this->db->prepare('SELECT user_id FROM orders WHERE id = :order_id LIMIT 1');
+                $uStmt->execute(['order_id' => $orderId]);
+                $uRow = $uStmt->fetch();
+                if ($uRow) {
+                    require_once __DIR__ . '/../models/Notification.php';
+                    (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido #' . $orderId . ' ha sido pagado con éxito.');
+                }
+            } catch (\Throwable $e) {
+                // Ignore notification error
+            }
         } else {
             return;
         }

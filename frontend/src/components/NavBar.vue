@@ -40,6 +40,32 @@
         Panel Admin
       </RouterLink>
 
+      <!-- Notification Bell -->
+      <div v-if="store.user" class="notifications-container">
+        <button class="bell-btn" @click="toggleNotifications" aria-label="Notificaciones">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span v-if="unreadCount > 0" class="badge"></span>
+        </button>
+
+        <div v-if="isNotificationsOpen" class="notifications-dropdown">
+          <div class="notifications-header">
+            <h4>Notificaciones</h4>
+          </div>
+          <div class="notifications-list">
+            <div v-if="notifications.length === 0" class="no-notifications">
+              Sin notificaciones
+            </div>
+            <div v-else v-for="notif in notifications" :key="notif.id" :class="['notif-item', { 'unread': !notif.is_read }]">
+              <p class="notif-message">{{ notif.message }}</p>
+              <span class="notif-date">{{ new Date(notif.created_at).toLocaleString('es-ES') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <RouterLink v-if="!store.user" to="/login" class="login-btn" @click="isMenuOpen = false">
         Login
       </RouterLink>
@@ -52,21 +78,75 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-// 1. Importamos el store directamente (ajusta la ruta si es necesario)
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { store } from '../store' 
+import { api } from '../services/api'
 
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
+const isNotificationsOpen = ref(false)
+const notifications = ref([])
 
 const isAdmin = computed(() => (store.user?.role || '') === 'ADMINISTRADOR')
+
+const unreadCount = computed(() => {
+  return notifications.value.filter(n => !n.is_read).length
+})
 
 const handleScroll = () => { 
   isScrolled.value = window.scrollY > 50 
 }
 
-onMounted(() => window.addEventListener('scroll', handleScroll))
-onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+const fetchNotifications = async () => {
+  if (!store.user) return
+  try {
+    const res = await api.get('/api/notifications')
+    notifications.value = res.data || []
+  } catch (e) {
+    console.error('Error fetching notifications:', e)
+  }
+}
+
+const toggleNotifications = async () => {
+  isNotificationsOpen.value = !isNotificationsOpen.value
+  if (isNotificationsOpen.value && unreadCount.value > 0) {
+    try {
+      await api.post('/api/notifications/read')
+      notifications.value.forEach(n => n.is_read = 1)
+    } catch (e) {
+      console.error('Error marking notifications as read:', e)
+    }
+  }
+}
+
+const closeNotifications = (e) => {
+  if (!e.target.closest('.notifications-container')) {
+    isNotificationsOpen.value = false;
+  }
+}
+
+watch(() => store.user, (newUser) => {
+  if (newUser) {
+    fetchNotifications()
+  } else {
+    notifications.value = []
+  }
+}, { immediate: true })
+
+let intervalId = null
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  window.addEventListener('click', closeNotifications)
+  fetchNotifications()
+  intervalId = setInterval(fetchNotifications, 20000)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('click', closeNotifications)
+  if (intervalId) clearInterval(intervalId)
+})
 </script>
 
 <style scoped>
@@ -165,5 +245,115 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
   .menu-open .bar:nth-child(1) { transform: translateY(9px) rotate(45deg); }
   .menu-open .bar:nth-child(2) { opacity: 0; }
   .menu-open .bar:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+}
+
+/* --- NOTIFICACIONES --- */
+.notifications-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bell-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+}
+
+.bell-btn:hover {
+  color: #ff9f43;
+}
+
+.bell-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  background-color: #ff6b6b;
+  border-radius: 50%;
+  border: 1.5px solid #1a233d;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: 50px;
+  right: -10px;
+  width: 320px;
+  max-height: 400px;
+  background: rgba(26, 35, 61, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notifications-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notifications-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.notifications-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.no-notifications {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.notif-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s;
+  text-align: left;
+}
+
+.notif-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.notif-item.unread {
+  background-color: rgba(255, 159, 67, 0.05);
+}
+
+.notif-message {
+  margin: 0 0 6px 0;
+  font-size: 0.85rem;
+  color: #f1f5f9;
+  line-height: 1.4;
+}
+
+.notif-date {
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
 </style>

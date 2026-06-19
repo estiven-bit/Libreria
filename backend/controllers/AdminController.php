@@ -77,7 +77,7 @@ class AdminController
     public function updateOrderStatus(int $orderId, array $data): void
     {
         $status = (string)($data['status'] ?? '');
-        $allowed = ['pending', 'paid', 'cancelled', 'shipped', 'delivered'];
+        $allowed = ['pending', 'paid', 'cancelled', 'shipped', 'delivered', 'preparing', 'ready'];
         if (!in_array($status, $allowed, true)) {
             Response::json(['error' => 'Invalid status'], 422);
         }
@@ -93,6 +93,29 @@ class AdminController
         if (in_array($status, ['paid', 'delivered'], true)) {
             require_once __DIR__ . '/../services/StockService.php';
             (new StockService($this->db))->reduceStockForOrder($orderId);
+        }
+
+        // Notify user about status change
+        $ordInfo = $this->db->prepare('SELECT user_id FROM orders WHERE id = :id LIMIT 1');
+        $ordInfo->execute(['id' => $orderId]);
+        $ordRow = $ordInfo->fetch();
+        if ($ordRow) {
+            $userId = (int)$ordRow['user_id'];
+            require_once __DIR__ . '/../models/Notification.php';
+            $notificationModel = new Notification($this->db);
+            
+            $statusMap = [
+                'pending' => 'Tu pedido #' . $orderId . ' ha sido recibido.',
+                'paid' => 'Tu pedido #' . $orderId . ' ha sido pagado con éxito.',
+                'cancelled' => 'Tu pedido #' . $orderId . ' ha sido cancelado.',
+                'preparing' => 'Tu pedido #' . $orderId . ' se está preparando.',
+                'ready' => 'Tu pedido #' . $orderId . ' está listo para entregar.',
+                'shipped' => 'Tu pedido #' . $orderId . ' ha sido enviado.',
+                'delivered' => 'Tu pedido #' . $orderId . ' ha sido entregado.'
+            ];
+            
+            $msg = $statusMap[$status] ?? ('El estado de tu pedido #' . $orderId . ' ha cambiado a ' . $status);
+            $notificationModel->create($userId, $orderId, $msg);
         }
 
         if ($status === 'paid' && $previous !== 'paid') {

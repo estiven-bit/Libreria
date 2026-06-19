@@ -26,6 +26,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
 require_once __DIR__ . '/../controllers/AdminController.php';
 require_once __DIR__ . '/../controllers/CouponController.php';
 require_once __DIR__ . '/../controllers/UploadController.php';
+require_once __DIR__ . '/../controllers/NotificationController.php';
 require_once __DIR__ . '/../services/UploadService.php';
 require_once __DIR__ . '/../models/Log.php';
 
@@ -124,6 +125,7 @@ if (
     || str_starts_with($handler, 'cart.')
     || str_starts_with($handler, 'orders.')
     || str_starts_with($handler, 'user.')
+    || str_starts_with($handler, 'notifications.')
     || $handler === 'payment.create'
     || str_starts_with($handler, 'checkout.')
     || $handler === 'products.reviews.create')
@@ -222,6 +224,12 @@ switch ($handler) {
         break;
     case 'orders.cancel':
         (new OrderController($db, $config))->cancel((int)$user['sub'], (int)$params[0]);
+        break;
+    case 'notifications.list':
+        (new NotificationController($db))->list((int)$user['sub']);
+        break;
+    case 'notifications.read':
+        (new NotificationController($db))->read((int)$user['sub']);
         break;
     case 'orders.telegramDeliver':
         $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;

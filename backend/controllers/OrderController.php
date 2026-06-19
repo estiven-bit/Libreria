@@ -61,6 +61,14 @@ class OrderController
 
         $cartModel->clear((int)$cart['id']);
 
+        // Insert notification
+        try {
+            require_once __DIR__ . '/../models/Notification.php';
+            (new Notification($this->db))->create($userId, $orderId, 'Tu pedido #' . $orderId . ' ha sido recibido.');
+        } catch (\Throwable $e) {
+            // Ignore
+        }
+
         $email = new EmailService($this->config['mail']);
         $email->sendOrderConfirmation($data['user_email'] ?? '', $orderId);
 
@@ -107,15 +115,47 @@ class OrderController
                 : '<b>Pendiente de pago al recibir</b>';
 
             $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
-            $publicUrl = env('APP_PUBLIC_URL', 'http://localhost/libreria_gabi/backend/public');
+            
+            $publicUrl = env('APP_PUBLIC_URL', '');
+            if (empty($publicUrl) || (str_contains($publicUrl, 'localhost') && isset($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost'))) {
+                $protocol = 'https';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                    $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+                }
+                $publicUrl = $protocol . '://' . $host;
+            } else {
+                if (!str_contains($publicUrl, 'localhost') && !str_contains($publicUrl, '127.0.0.1')) {
+                    $publicUrl = str_replace('http://', 'https://', $publicUrl);
+                }
+            }
+            if (empty($publicUrl)) {
+                $publicUrl = 'http://localhost/libreria_gabi/backend/public';
+            }
+
             $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
+
+            $customerNameEscaped = htmlspecialchars($userInfo['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $customerEmailEscaped = htmlspecialchars($userInfo['email'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $customerPhoneEscaped = htmlspecialchars($userInfo['phone'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+            $itemsText = "";
+            foreach ($items as $item) {
+                $itemNameEscaped = htmlspecialchars($item['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                $itemsText .= "- {$itemNameEscaped} (x{$item['quantity']}) - \$" . number_format($item['price'] * $item['quantity'], 2) . "\n";
+            }
+
+            $addrText = "Dirección: " . htmlspecialchars($addressInfo['address_line'] . ", " . $addressInfo['city'] . " (" . $addressInfo['postal_code'] . "), " . $addressInfo['country'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
             $message = "📦 <b>NUEVO PEDIDO RECIBIDO</b>\n\n" .
                        "Pedido: <b>#{$orderId}</b>\n" .
-                       "Cliente: <b>{$userInfo['name']}</b>\n" .
-                       "Total: <b>\$" . number_format($total, 2) . "</b>\n" .
+                       "Cliente: <b>{$customerNameEscaped}</b> ({$customerEmailEscaped})\n" .
+                       "Teléfono: {$customerPhoneEscaped}\n" .
                        "Método de pago: {$methodText}\n" .
-                       "Estado: {$statusText}\n";
+                       "Estado: {$statusText}\n\n" .
+                       "<b>Libros:</b>\n" . $itemsText . "\n" .
+                       "{$addrText}\n\n" .
+                       "Total: <b>\$" . number_format($total, 2) . "</b>";
 
             $keyboard = [
                 'inline_keyboard' => [
@@ -149,6 +189,16 @@ class OrderController
     {
         $stmt = $this->db->prepare("UPDATE orders SET status = 'cancelled' WHERE id = :id AND user_id = :user_id AND status IN ('pending', 'paid')");
         $stmt->execute(['id' => $orderId, 'user_id' => $userId]);
+        
+        if ($stmt->rowCount() > 0) {
+            try {
+                require_once __DIR__ . '/../models/Notification.php';
+                (new Notification($this->db))->create($userId, $orderId, 'Tu pedido #' . $orderId . ' ha sido cancelado.');
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+        
         Response::json(['message' => 'Order cancelled']);
     }
 
@@ -175,6 +225,19 @@ class OrderController
 
         $up = $this->db->prepare("UPDATE orders SET status = 'delivered' WHERE id = :id");
         $up->execute(['id' => $orderId]);
+
+        // Get user ID of the order to notify
+        try {
+            $uStmt = $this->db->prepare('SELECT user_id FROM orders WHERE id = :id LIMIT 1');
+            $uStmt->execute(['id' => $orderId]);
+            $uRow = $uStmt->fetch();
+            if ($uRow) {
+                require_once __DIR__ . '/../models/Notification.php';
+                (new Notification($this->db))->create((int)$uRow['user_id'], $orderId, 'Tu pedido #' . $orderId . ' ha sido entregado.');
+            }
+        } catch (\Throwable $e) {
+            // Ignore
+        }
 
         $stockService = new StockService($this->db);
         $stockService->reduceStockForOrder($orderId);
