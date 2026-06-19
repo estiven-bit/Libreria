@@ -54,23 +54,12 @@
 
           <div class="filter-section">
             <label>Categorías</label>
-            <div class="category-list">
-              <button 
-                :class="['cat-link', { 'is-active': selected === null }]"
-                @click="selectCategory(null)"
-              >
-                <span class="dot"></span> Todos
-              </button>
-              
-              <button 
-                v-for="cat in categories" 
-                :key="cat.id" 
-                :class="['cat-link', { 'is-active': selected === cat.id }]"
-                @click="selectCategory(cat.id)"
-              >
-                <span class="dot"></span> {{ cat.name }}
-              </button>
-            </div>
+            <select v-model="selected" class="search-input select-input">
+              <option :value="null">Todas las categorías</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </option>
+            </select>
           </div>
         </div>
       </aside>
@@ -141,12 +130,6 @@ const limit = 20
 
 const totalPages = computed(() => Math.ceil(total.value / limit))
 
-const selectCategory = (id) => {
-  selected.value = id
-  currentPage.value = 1
-  loadProducts()
-}
-
 const loadCategories = async () => {
   try {
     const catsRes = await api.get('/categories')
@@ -196,7 +179,7 @@ watch(() => route.query.categoria, (newVal) => {
   loadProducts()
 })
 
-watch([minPrice, maxPrice, inStockOnly, sortBy], () => {
+watch([selected, minPrice, maxPrice, inStockOnly, sortBy], () => {
   currentPage.value = 1
   loadProducts()
 })

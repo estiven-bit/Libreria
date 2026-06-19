@@ -39,13 +39,28 @@
             <input v-model="paymentMethod" type="radio" value="cash_on_delivery" />
             Pago al recibir
           </label>
-          <input v-model="coupon" class="input" placeholder="Codigo de cupon" />
+
+          <div class="coupon-section">
+            <input v-model="coupon" class="input coupon-input" placeholder="Codigo de cupon" />
+            <button class="btn btn-apply-coupon" type="button" @click="applyCoupon">Aplicar</button>
+          </div>
+          <p v-if="couponSuccess" class="coupon-success">{{ couponSuccess }}</p>
+          <p v-if="couponError" class="coupon-error">{{ couponError }}</p>
         </div>
 
         <div class="card">
           <h3>Resumen</h3>
           <p>Items: {{ cart.count }}</p>
-          <p class="total">Total: <strong>${{ Number(cart.total).toFixed(2) }}</strong></p>
+          <p class="total">
+            Total:
+            <template v-if="appliedCoupon">
+              <span class="old-total">${{ Number(cart.total).toFixed(2) }}</span>
+              <strong>${{ Number(finalTotal).toFixed(2) }}</strong>
+            </template>
+            <template v-else>
+              <strong>${{ Number(cart.total).toFixed(2) }}</strong>
+            </template>
+          </p>
 
           <button
             v-if="paymentMethod === 'card_online'"
@@ -90,6 +105,18 @@ const addressForm = ref({ country: '', city: '', postal_code: '', address_line: 
 const loading = ref(false)
 const checkoutMessage = ref('')
 
+const appliedCoupon = ref(null)
+const couponError = ref('')
+const couponSuccess = ref('')
+
+const finalTotal = computed(() => {
+  const base = Number(cart.total)
+  if (appliedCoupon.value) {
+    return base - (base * (appliedCoupon.value.discount_percentage / 100))
+  }
+  return base
+})
+
 const isActionDisabled = computed(() => (
   !store.user?.is_active || !selectedAddressId.value || cart.count < 1
 ))
@@ -124,10 +151,37 @@ const createAddress = async () => {
   }
 }
 
+const applyCoupon = async () => {
+  couponError.value = ''
+  couponSuccess.value = ''
+  appliedCoupon.value = null
+
+  if (!coupon.value.trim()) {
+    return
+  }
+
+  try {
+    const res = await api.get('/api/coupons/active')
+    const list = res.data || []
+    const found = list.find(c => c.code.toLowerCase() === coupon.value.trim().toLowerCase())
+    if (found) {
+      appliedCoupon.value = found
+      couponSuccess.value = `¡Cupón "${found.code}" del ${found.discount_percentage}% aplicado con éxito!`
+      toast.success(couponSuccess.value)
+    } else {
+      couponError.value = 'El cupón introducido no es válido o está inactivo.'
+      toast.error(couponError.value)
+    }
+  } catch (err) {
+    couponError.value = 'Error al validar el cupón.'
+    console.error(err)
+  }
+}
+
 const createOrder = async (method) => {
   const response = await api.post('/api/orders', {
     payment_method: method,
-    coupon_code: coupon.value,
+    coupon_code: appliedCoupon.value ? appliedCoupon.value.code : '',
     user_email: store.user?.email,
     address_id: selectedAddressId.value,
   })
@@ -226,6 +280,42 @@ onMounted(loadAddresses)
   margin-top: 12px;
 }
 .muted { opacity: 0.7; }
+
+.coupon-section {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.coupon-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+.btn-apply-coupon {
+  padding: 0 15px;
+  background: #1a233d;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.coupon-success {
+  color: #166534;
+  font-size: 0.82rem;
+  font-weight: bold;
+  margin: 6px 0 0;
+}
+.coupon-error {
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: bold;
+  margin: 6px 0 0;
+}
+.old-total {
+  text-decoration: line-through;
+  opacity: 0.6;
+  margin-right: 8px;
+}
 
 @media (max-width: 900px) {
   .checkout-grid {

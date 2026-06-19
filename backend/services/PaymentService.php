@@ -191,7 +191,10 @@ class PaymentService
         );
         $updOrder->execute(['order_id' => $orderId]);
 
-        if ($updOrder->rowCount() < 1) {
+        if ($updOrder->rowCount() > 0) {
+            require_once __DIR__ . '/StockService.php';
+            (new StockService($this->db))->reduceStockForOrder($orderId);
+        } else {
             return;
         }
 

@@ -262,7 +262,7 @@ class ProductController
             INNER JOIN order_items oi ON o.id = oi.order_id 
             WHERE o.user_id = :user_id 
               AND oi.product_id = :product_id 
-              AND o.status = "delivered"
+              AND o.status = \'delivered\'
         ');
 
         foreach ($reviews as &$r) {

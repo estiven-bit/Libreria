@@ -90,6 +90,11 @@ class AdminController
         $stmt = $this->db->prepare('UPDATE orders SET status = :status WHERE id = :id');
         $stmt->execute(['status' => $status, 'id' => $orderId]);
 
+        if (in_array($status, ['paid', 'delivered'], true)) {
+            require_once __DIR__ . '/../services/StockService.php';
+            (new StockService($this->db))->reduceStockForOrder($orderId);
+        }
+
         if ($status === 'paid' && $previous !== 'paid') {
             $info = $this->db->prepare(
                 'SELECT o.id, o.total_price, u.name AS user_name

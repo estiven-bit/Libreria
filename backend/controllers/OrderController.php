@@ -59,11 +59,6 @@ class OrderController
             $orderModel->addItem($orderId, (int)$item['product_id'], (int)$item['quantity'], (float)$item['price']);
         }
 
-        $stockService = new StockService($this->db);
-        foreach ($items as $item) {
-            $stockService->reduceStock((int)$item['product_id'], (int)$item['quantity'], 'Order #' . $orderId);
-        }
-
         $cartModel->clear((int)$cart['id']);
 
         $email = new EmailService($this->config['mail']);
@@ -114,6 +109,13 @@ class OrderController
             $secret = hash_hmac('sha256', (string)$orderId, env('JWT_SECRET', 'change_this_secret'));
             $publicUrl = env('APP_PUBLIC_URL', 'http://localhost/libreria_gabi/backend/public');
             $deliveryUrl = rtrim($publicUrl, '/') . "/api/orders/telegram-deliver?order_id={$orderId}&token={$secret}";
+
+            $message = "📦 <b>NUEVO PEDIDO RECIBIDO</b>\n\n" .
+                       "Pedido: <b>#{$orderId}</b>\n" .
+                       "Cliente: <b>{$userInfo['name']}</b>\n" .
+                       "Total: <b>\$" . number_format($total, 2) . "</b>\n" .
+                       "Método de pago: {$methodText}\n" .
+                       "Estado: {$statusText}\n";
 
             $keyboard = [
                 'inline_keyboard' => [
@@ -173,6 +175,9 @@ class OrderController
 
         $up = $this->db->prepare("UPDATE orders SET status = 'delivered' WHERE id = :id");
         $up->execute(['id' => $orderId]);
+
+        $stockService = new StockService($this->db);
+        $stockService->reduceStockForOrder($orderId);
 
         try {
             $logStmt = $this->db->prepare('INSERT INTO logs (event, created_at) VALUES (:event, NOW())');
