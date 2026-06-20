@@ -43,6 +43,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Keep-alive ligero: sin sesión ni BD (Vercel cron cada 5 min).
 if ($uri === '/bff/health' && $method === 'GET') {
+    Security::bootstrapCors();
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     echo json_encode(['ok' => true, 'ts' => time()]);

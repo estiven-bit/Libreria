@@ -297,7 +297,7 @@ onUnmounted(() => {
     display: flex;
     margin-left: auto;
     margin-right: 20px;
-    z-index: 1001; /* Queda visible al lado del botón de menú */
+    z-index: 3000; /* Asegura estar por encima del botón de menú (1100) */
   }
 }
 
