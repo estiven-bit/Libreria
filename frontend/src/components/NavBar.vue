@@ -451,6 +451,7 @@ onUnmounted(() => {
     font-size: 2rem;
     padding: 4px 8px;
     color: #ffffff;
+    margin-right: 55px; /* Alineado en la misma posición de la campana, evitando solapamiento con el menú */
   }
 
   .notifications-list {
