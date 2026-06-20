@@ -48,7 +48,7 @@
           <p class="description">{{ product.description }}</p>
           <p class="price">${{ Number(product.price).toFixed(2) }}</p>
           <p v-if="product.stock != null" class="stock">Stock: {{ product.stock }}</p>
-          <div class="row">
+          <div v-if="legacyStore.user" class="row">
             <input v-model.number="quantity" class="input" type="number" min="1" />
             <button class="btn" type="button" @click="addToCart">Agregar al carrito</button>
           </div>
