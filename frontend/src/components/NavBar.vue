@@ -11,6 +11,32 @@
         </div>
       </div>
     </RouterLink>
+    <!-- Mobile Notification Bell (outside of the collapsible menu) -->
+    <div v-if="store.user" class="notifications-container notifications-container--mobile">
+      <button class="bell-btn" @click="toggleNotifications" aria-label="Notificaciones">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span v-if="unreadCount > 0" class="badge"></span>
+      </button>
+
+      <div v-if="isNotificationsOpen" class="notifications-dropdown">
+        <div class="notifications-header">
+          <h4>Notificaciones</h4>
+          <button class="close-notif-btn" @click="isNotificationsOpen = false" aria-label="Cerrar">×</button>
+        </div>
+        <div class="notifications-list">
+          <div v-if="notifications.length === 0" class="no-notifications">
+            Sin notificaciones
+          </div>
+          <div v-else v-for="notif in notifications" :key="notif.id" :class="['notif-item', { 'unread': !notif.is_read }]">
+            <p class="notif-message">{{ notif.message }}</p>
+            <span class="notif-date">{{ new Date(notif.created_at).toLocaleString('es-ES') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <button class="menu-toggle" @click="isMenuOpen = !isMenuOpen" aria-label="Abrir menú">
       <span class="bar"></span>
@@ -40,8 +66,8 @@
         Panel Admin
       </RouterLink>
 
-      <!-- Notification Bell -->
-      <div v-if="store.user" class="notifications-container">
+      <!-- Desktop Notification Bell (inside of the menu on desktop) -->
+      <div v-if="store.user" class="notifications-container notifications-container--desktop">
         <button class="bell-btn" @click="toggleNotifications" aria-label="Notificaciones">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -53,6 +79,7 @@
         <div v-if="isNotificationsOpen" class="notifications-dropdown">
           <div class="notifications-header">
             <h4>Notificaciones</h4>
+            <button class="close-notif-btn" @click="isNotificationsOpen = false" aria-label="Cerrar">×</button>
           </div>
           <div class="notifications-list">
             <div v-if="notifications.length === 0" class="no-notifications">
@@ -254,6 +281,26 @@ onUnmounted(() => {
   align-items: center;
 }
 
+/* Visibilidad de las campanas (móvil vs desktop) */
+.notifications-container--mobile {
+  display: none;
+}
+.notifications-container--desktop {
+  display: flex;
+}
+
+@media (max-width: 992px) {
+  .notifications-container--desktop {
+    display: none;
+  }
+  .notifications-container--mobile {
+    display: flex;
+    margin-left: auto;
+    margin-right: 20px;
+    z-index: 1001; /* Queda visible al lado del botón de menú */
+  }
+}
+
 .bell-btn {
   background: none;
   border: none;
@@ -308,6 +355,9 @@ onUnmounted(() => {
 .notifications-header {
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .notifications-header h4 {
@@ -315,6 +365,21 @@ onUnmounted(() => {
   font-size: 0.95rem;
   color: #ffffff;
   font-weight: 700;
+}
+
+.close-notif-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.close-notif-btn:hover {
+  color: #ffffff;
 }
 
 .notifications-list {
@@ -355,5 +420,54 @@ onUnmounted(() => {
 .notif-date {
   font-size: 0.72rem;
   color: #94a3b8;
+}
+
+/* Pantalla completa para móvil */
+@media (max-width: 768px) {
+  .notifications-dropdown {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    z-index: 2000;
+    background: #16213e; /* Fondo sólido oscuro premium para lectura clara */
+  }
+
+  .notifications-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .notifications-header h4 {
+    font-size: 1.15rem;
+  }
+
+  .close-notif-btn {
+    display: block;
+    font-size: 2rem;
+    padding: 4px 8px;
+    color: #ffffff;
+  }
+
+  .notifications-list {
+    padding: 10px 0;
+  }
+
+  .notif-item {
+    padding: 18px 20px;
+  }
+
+  .notif-message {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+
+  .notif-date {
+    font-size: 0.78rem;
+  }
 }
 </style>
