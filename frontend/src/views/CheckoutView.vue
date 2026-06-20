@@ -11,22 +11,37 @@
 
       <div class="checkout-grid" :class="{ 'inactive-user': !store.user?.is_active }">
         <div class="card">
-          <h3>Direccion de envio</h3>
-          <div v-if="addresses.length">
-            <label class="radio" v-for="a in addresses" :key="a.id">
-              <input v-model="selectedAddressId" type="radio" :value="a.id" />
-              {{ a.address_line }}, {{ a.city }} ({{ a.postal_code }})
-            </label>
-          </div>
-          <p v-else class="muted">No tienes direcciones guardadas. Crea una para continuar.</p>
-
+          <h3>Dirección de envío</h3>
+          
+          <h4 class="checkout-subtitle">Añadir nueva</h4>
           <div class="address-form">
-            <input v-model="addressForm.country" class="input" placeholder="Pais" />
+            <input v-model="addressForm.country" class="input" placeholder="País" />
             <input v-model="addressForm.city" class="input" placeholder="Ciudad" />
-            <input v-model="addressForm.postal_code" class="input" placeholder="Codigo postal" />
-            <input v-model="addressForm.address_line" class="input" placeholder="Direccion" />
-            <button class="btn-secondary" type="button" @click="createAddress">Guardar direccion</button>
+            <input v-model="addressForm.postal_code" class="input" placeholder="Código postal" />
+            <input v-model="addressForm.address_line" class="input" placeholder="Dirección" />
+            <button class="btn-secondary" type="button" @click="createAddress">Guardar dirección</button>
           </div>
+
+          <h4 class="checkout-subtitle" style="margin-top: 25px;">Direcciones guardadas</h4>
+          <div v-if="addresses.length" class="saved-addresses-grid">
+            <div 
+              v-for="a in addresses" 
+              :key="a.id" 
+              class="address-card" 
+              :class="{ active: selectedAddressId === a.id }"
+              @click="selectedAddressId = a.id"
+            >
+              <div class="address-card-header">
+                <span class="address-check"></span>
+                <span class="address-city">{{ a.city }}</span>
+              </div>
+              <div class="address-card-body">
+                <p class="address-line">{{ a.address_line }}</p>
+                <p class="address-zip">{{ a.postal_code }} {{ a.country ? `- ${a.country}` : '' }}</p>
+              </div>
+            </div>
+          </div>
+          <p v-else class="muted" style="margin-top: 10px; text-align: center;">No tienes direcciones guardadas. Crea una arriba.</p>
         </div>
 
         <div class="card">
@@ -51,19 +66,44 @@
           <p v-if="couponError" class="coupon-error">{{ couponError }}</p>
         </div>
 
-        <div class="card">
+        <div class="card summary-card">
           <h3>Resumen</h3>
-          <p>Items: {{ cart.count }}</p>
-          <p class="total">
-            Total:
-            <template v-if="appliedCoupon">
-              <span class="old-total">${{ Number(cart.total).toFixed(2) }}</span>
-              <strong>${{ Number(finalTotal).toFixed(2) }}</strong>
-            </template>
-            <template v-else>
-              <strong>${{ Number(cart.total).toFixed(2) }}</strong>
-            </template>
-          </p>
+          
+          <div class="summary-items-list">
+            <div v-for="item in cart.items" :key="item.id" class="summary-item-row">
+              <div class="summary-item-image">
+                <img :src="api.mediaUrl(item.image_url) || placeholderImage" :alt="item.name" />
+              </div>
+              <div class="summary-item-details">
+                <h4 class="summary-item-name" :title="item.name">{{ item.name }}</h4>
+                <p class="summary-item-meta">Cant: {{ item.quantity }} × ${{ Number(item.price).toFixed(2) }}</p>
+              </div>
+              <div class="summary-item-total">
+                ${{ (Number(item.price) * Number(item.quantity)).toFixed(2) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-totals">
+            <div class="totals-row">
+              <span>Artículos:</span>
+              <span>{{ cart.count }}</span>
+            </div>
+            <div class="totals-row total-final">
+              <span>Total:</span>
+              <template v-if="appliedCoupon">
+                <div class="totals-with-coupon">
+                  <span class="old-total">${{ Number(cart.total).toFixed(2) }}</span>
+                  <strong class="new-total">${{ Number(finalTotal).toFixed(2) }}</strong>
+                </div>
+              </template>
+              <template v-else>
+                <strong>${{ Number(cart.total).toFixed(2) }}</strong>
+              </template>
+            </div>
+          </div>
 
           <button
             v-if="paymentMethod === 'card_online'"
@@ -94,6 +134,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useCartStore } from '../stores/cart'
 import { useToastStore } from '../stores/toast'
+import placeholderImage from '../assets/img/placeholder.png'
 
 const store = inject('store')
 const cart = useCartStore()
@@ -331,5 +372,230 @@ onMounted(loadAddresses)
   font-size: 0.88rem;
   font-weight: 600;
   color: #475569;
+}
+
+/* Shipping Address Refinements */
+.checkout-subtitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a233d;
+  margin: 20px 0 10px;
+  border-bottom: 1px dashed #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.saved-addresses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 12px;
+}
+
+.address-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.address-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.address-card.active {
+  border-color: #ff9f43;
+  background: #fffdf9;
+  box-shadow: 0 4px 12px rgba(255, 159, 67, 0.15);
+}
+
+.address-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.address-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.address-card.active .address-check {
+  border-color: #ff9f43;
+  background: #ff9f43;
+}
+
+.address-card.active .address-check::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+}
+
+.address-city {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.address-card-body {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.address-line {
+  margin: 0;
+  font-weight: 500;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.address-zip {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+/* Checkout Summary Card Item Breakdown */
+.summary-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-items-list {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 15px 0;
+  padding-right: 5px;
+}
+
+.summary-items-list::-webkit-scrollbar {
+  width: 4px;
+}
+.summary-items-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+.summary-items-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+.summary-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.summary-item-row:last-child {
+  border-bottom: none;
+}
+
+.summary-item-image {
+  width: 40px;
+  height: 54px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.summary-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.summary-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary-item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-item-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.summary-item-total {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.summary-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 15px 0;
+}
+
+.summary-totals {
+  margin-bottom: 20px;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.total-final {
+  font-size: 1.15rem;
+  color: #1e293b;
+  font-weight: 800;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.totals-with-coupon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-total {
+  color: #ff9f43;
 }
 </style>
